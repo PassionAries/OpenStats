@@ -252,3 +252,15 @@ struct LiveSamplerTests {
         #expect(counts.threads >= counts.processes)
     }
 }
+
+@Suite struct DiskBreakdownTests {
+    @Test func partsAddUpToTotal() {
+        // 2 TB 容器：系统 14、数据 266（含可清除 2）、虚拟内存 2，恢复卷未挂载约 14，空闲 1700
+        let gb: UInt64 = 1_000_000_000
+        let parts = DiskBreakdown.compose(total: 1996 * gb, free: 1700 * gb, purgeable: 2 * gb,
+                                          systemUsed: 14 * gb, dataUsed: 266 * gb, vmUsed: 2 * gb)
+        #expect(parts.data == 264 * gb)
+        #expect(parts.other == 14 * gb)
+        #expect(parts.system + parts.data + parts.virtualMemory + parts.other + parts.purgeable + parts.free == 1996 * gb)
+    }
+}

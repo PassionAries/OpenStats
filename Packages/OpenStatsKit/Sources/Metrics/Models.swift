@@ -93,6 +93,43 @@ public struct DiskUsage: Sendable, Equatable {
     public var free: UInt64 { available - purgeable }
     public var purgeableFraction: Double { total == 0 ? 0 : Double(purgeable) / Double(total) }
     public var freeFraction: Double { total == 0 ? 0 : Double(free) / Double(total) }
+    /// 启动磁盘里都装了什么；不是 APFS 系统卷布局时为 nil
+    public var breakdown: DiskBreakdown?
+}
+
+/// 启动磁盘（APFS 容器）的组成，各项相加等于总容量
+public struct DiskBreakdown: Sendable, Equatable {
+    /// 只读的系统卷（macOS 本身）
+    public var system: UInt64
+    /// 数据卷里除可清除缓存以外的部分：应用、文稿、用户资料等
+    public var data: UInt64
+    /// 虚拟内存卷（交换文件与睡眠镜像）
+    public var virtualMemory: UInt64
+    /// 启动、恢复、更新等系统辅助卷与快照
+    public var other: UInt64
+    public var purgeable: UInt64
+    public var free: UInt64
+
+    public init(system: UInt64, data: UInt64, virtualMemory: UInt64, other: UInt64, purgeable: UInt64, free: UInt64) {
+        self.system = system
+        self.data = data
+        self.virtualMemory = virtualMemory
+        self.other = other
+        self.purgeable = purgeable
+        self.free = free
+    }
+
+    /// 由各卷的已用量拆分：容器已用 = 总容量 − 真正空闲；数据卷的已用里含可清除缓存，单独列出；
+    /// 没挂载的恢复卷等算进“其他”，保证各项相加等于总容量
+    public static func compose(total: UInt64, free: UInt64, purgeable: UInt64,
+                               systemUsed: UInt64, dataUsed: UInt64, vmUsed: UInt64) -> DiskBreakdown {
+        let containerUsed = total > free ? total - free : 0
+        let data = dataUsed > purgeable ? dataUsed - purgeable : 0
+        let known = systemUsed + dataUsed + vmUsed
+        return DiskBreakdown(system: systemUsed, data: data, virtualMemory: vmUsed,
+                             other: containerUsed > known ? containerUsed - known : 0,
+                             purgeable: purgeable, free: free)
+    }
 }
 
 public struct BatteryStatus: Sendable, Equatable {
@@ -104,12 +141,23 @@ public struct BatteryStatus: Sendable, Equatable {
     public var cycleCount: Int?
     public var health: Double?          // 0...1
     public var adapterWatts: Int?
+    /// 设计容量与当前满充容量（mAh）
+    public var designCapacity: Int?
+    public var fullChargeCapacity: Int?
+    /// 电压（V）与电流（A，放电为负、充电为正）
+    public var voltage: Double?
+    public var amperage: Double?
 }
 
 public struct GPUUsage: Sendable, Equatable {
     public var name: String
     public var utilization: Double      // 0...1
     public var coreCount: Int?
+    /// 渲染（着色）与拼接（几何）两条流水线各自的利用率，0...1
+    public var rendererUtilization: Double?
+    public var tilerUtilization: Double?
+    /// GPU 正在使用的统一内存（字节）
+    public var memoryInUse: UInt64?
 }
 
 public struct ProcessUsage: Sendable, Equatable, Identifiable {

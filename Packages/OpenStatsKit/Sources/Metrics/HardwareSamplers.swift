@@ -14,9 +14,29 @@ public enum DiskSampler {
         // “重要用途可用空间”包含可清除空间，与访达显示一致；减去普通可用空间就是可清除的部分
         let available = max(0, values.volumeAvailableCapacityForImportantUsage ?? 0)
         let strict = Int64(values.volumeAvailableCapacity ?? 0)
-        return DiskUsage(volumeName: values.volumeLocalizedName ?? tr("磁盘"),
-                         total: UInt64(total), available: UInt64(available),
-                         purgeable: UInt64(max(0, available - strict)))
+        var usage = DiskUsage(volumeName: values.volumeLocalizedName ?? tr("磁盘"),
+                              total: UInt64(total), available: UInt64(available),
+                              purgeable: UInt64(max(0, available - strict)))
+        if volume.path == "/" { usage.breakdown = breakdown(usage) }
+        return usage
+    }
+
+    /// APFS 下系统卷、数据卷与虚拟内存卷共用一个容器：statfs 对每个卷都只给出整个容器的用量，
+    /// 每个卷自己占了多少要用 getattrlist 的 ATTR_VOL_SPACEUSED（df 也是这样读的）
+    private static func breakdown(_ usage: DiskUsage) -> DiskBreakdown? {
+        func used(_ path: String) -> UInt64? {
+            var attributes = attrlist(bitmapcount: u_short(ATTR_BIT_MAP_COUNT), reserved: 0, commonattr: 0,
+                                      volattr: attrgroup_t(ATTR_VOL_INFO) | attrgroup_t(ATTR_VOL_SPACEUSED),
+                                      dirattr: 0, fileattr: 0, forkattr: 0)
+            // 返回的缓冲区：4 字节总长度，后面紧跟 8 字节的已用量
+            var buffer = [UInt8](repeating: 0, count: 32)
+            guard getattrlist(path, &attributes, &buffer, buffer.count, 0) == 0 else { return nil }
+            let value = buffer.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: 4, as: Int64.self) }
+            return value > 0 ? UInt64(value) : nil
+        }
+        guard let system = used("/"), let data = used("/System/Volumes/Data") else { return nil }
+        return DiskBreakdown.compose(total: usage.total, free: usage.free, purgeable: usage.purgeable,
+                                     systemUsed: system, dataUsed: data, vmUsed: used("/System/Volumes/VM") ?? 0)
     }
 }
 
@@ -58,6 +78,17 @@ public enum BatterySampler {
            let design = data["DesignCapacity"] as? Int, design > 0,
            let capacity = (data["NominalChargeCapacity"] as? Int) ?? (data["FullChargeCapacity"] as? Int) {
             status.health = min(1, Double(capacity) / Double(design))
+            status.designCapacity = design
+            // 系统设置里“最大容量”用的是 NominalChargeCapacity；原始满充容量会随温度和使用略有起伏
+            status.fullChargeCapacity = capacity
+        }
+        // 电压单位 mV，电流单位 mA（有符号，放电为负）
+        if let millivolts = IORegistry.property(service, "Voltage") as? Int, millivolts > 0 {
+            status.voltage = Double(millivolts) / 1000
+        }
+        // 负值有时以无符号数存放，按有符号 64 位读出
+        if let milliamps = (IORegistry.property(service, "InstantAmperage") ?? IORegistry.property(service, "Amperage")) as? NSNumber {
+            status.amperage = Double(milliamps.int64Value) / 1000
         }
         if let adapter = IORegistry.property(service, "AdapterDetails") as? [String: Any] {
             status.adapterWatts = adapter["Watts"] as? Int
@@ -81,9 +112,13 @@ public enum GPUSampler {
             // 只读取需要的属性，避免复制整张属性表
             guard let stats = IORegistry.property(service, "PerformanceStatistics") as? [String: Any],
                   let utilization = stats["Device Utilization %"] as? Int else { continue }
-            let usage = GPUUsage(name: IORegistry.property(service, "model") as? String ?? "GPU",
+            let percent = { (key: String) in (stats[key] as? Int).map { Double(min(100, max(0, $0))) / 100 } }
+            var usage = GPUUsage(name: IORegistry.property(service, "model") as? String ?? "GPU",
                                  utilization: Double(min(100, max(0, utilization))) / 100,
                                  coreCount: IORegistry.property(service, "gpu-core-count") as? Int)
+            usage.rendererUtilization = percent("Renderer Utilization %")
+            usage.tilerUtilization = percent("Tiler Utilization %")
+            usage.memoryInUse = (stats["In use system memory"] as? Int).map { UInt64(max(0, $0)) }
             if best == nil || usage.utilization > best!.utilization { best = usage }
         }
         return best

@@ -40,6 +40,11 @@ public enum Format {
         return "\(share.formatted(.number.precision(.fractionLength(1))))%"
     }
 
+    /// 容量写法：整数去掉“.0”，“64.0 GB”写成“64 GB”、“2.0 TB”写成“2 TB”
+    public static func capacity(_ value: UInt64, base: ByteBase = .binary) -> String {
+        bytes(value, base: base).replacingOccurrences(of: ".0 ", with: " ")
+    }
+
     public static func bytes(_ value: UInt64, base: ByteBase = .binary) -> String {
         bytes(Double(value), base: base)
     }
@@ -107,7 +112,7 @@ public enum Format {
     }
 
     public static func rpm(_ value: Double) -> String {
-        "\(Int(value.rounded())) RPM"
+        "\(Int(value.rounded()).formatted()) RPM"
     }
 
     public static func duration(minutes: Int) -> String {

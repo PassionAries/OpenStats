@@ -14,6 +14,8 @@ public struct PowerReading: Sendable, Equatable {
     public var gpu: Double?
     /// 各类核心在工作时的平均频率（MHz），键为 perflevel，0 为最高性能档
     public var clusterFrequency: [Int: Double] = [:]
+    /// GPU 工作时的平均频率（MHz）；两次采样之间 GPU 一直关着时为 0
+    public var gpuFrequency: Double?
 
     public init(system: Double? = nil, adapter: Double? = nil, battery: Double? = nil, gpu: Double? = nil,
                 clusterFrequency: [Int: Double] = [:]) {
@@ -33,7 +35,10 @@ public final class PowerSampler: @unchecked Sendable {
     private var cpuStates: Subscription?
     private var lastEnergy: (date: Date, sample: CFDictionary)?
     private var lastStates: (date: Date, sample: CFDictionary)?
+    private var gpuStates: Subscription?
+    private var lastGPUStates: (date: Date, sample: CFDictionary)?
     private lazy var frequencyTables: [[Double]] = Self.readFrequencyTables()
+    private lazy var gpuFrequencyTable: [Double]? = Self.readGPUFrequencyTable()
 
     public init() {}
 
@@ -43,7 +48,10 @@ public final class PowerSampler: @unchecked Sendable {
         reading.system = positive(smc?.double(SMCKey("PSTR")))
         reading.adapter = positive(smc?.double(SMCKey("PDTR")))
         reading.battery = smc?.double(SMCKey("PPBR")).flatMap { $0.isFinite && abs($0) >= 0.01 ? $0 : nil }
-        if includeGPU { reading.gpu = sampleGPU(now: now) }
+        if includeGPU {
+            reading.gpu = sampleGPU(now: now)
+            reading.gpuFrequency = sampleGPUFrequency(now: now)
+        }
         if includeFrequency { reading.clusterFrequency = sampleFrequencies(now: now) }
         return reading
     }
@@ -69,6 +77,69 @@ public final class PowerSampler: @unchecked Sendable {
             let value = Double(IOReportSimpleGetIntegerValue(channel, 0))
             let joules = value * Self.joulesPerUnit(Subscription.unit(channel))
             return joules / seconds
+        }
+        return nil
+    }
+
+    /// GPU 性能状态（GPUPH 通道：OFF、P1…Pn）按驻留时间加权的平均频率，只算工作中的状态
+    private func sampleGPUFrequency(now: Date) -> Double? {
+        guard let table = gpuFrequencyTable else { return nil }
+        if gpuStates == nil { gpuStates = Subscription(group: "GPU Stats", subgroup: "GPU Performance States") }
+        guard let gpuStates, let current = gpuStates.sample() else { return nil }
+        defer { lastGPUStates = (now, current) }
+        guard let last = lastGPUStates, now.timeIntervalSince(last.date) <= 15,
+              let delta = IOReportCreateSamplesDelta(last.sample, current, nil)?.takeRetainedValue() else { return nil }
+        for channel in Subscription.channels(in: delta) where Subscription.name(channel) == "GPUPH" {
+            var states: [(String, Int64)] = []
+            for index in 0..<IOReportStateGetCount(channel) {
+                let name = IOReportStateGetNameForIndex(channel, index)?.takeUnretainedValue() as String? ?? ""
+                states.append((name, IOReportStateGetResidency(channel, index)))
+            }
+            return Self.gpuFrequency(states, table: table)
+        }
+        return nil
+    }
+
+    /// “P1”对应频率表第 1 项（第 0 项是关闭状态的 0）；状态名不是 P 加数字的（OFF、IDLE）不计入
+    static func gpuFrequency(_ states: [(name: String, residency: Int64)], table: [Double]) -> Double {
+        var sum = 0.0
+        var time = 0.0
+        for state in states {
+            guard state.name.hasPrefix("P"), let level = Int(state.name.dropFirst()), level < table.count else { continue }
+            sum += table[level] * Double(state.residency)
+            time += Double(state.residency)
+        }
+        return time > 0 ? sum / time : 0
+    }
+
+    /// pmgr 的 voltage-states9：GPU 的频率表，第一项是关闭状态的 0，单位 Hz
+    static func parseGPUFrequencyTable(_ data: Data) -> [Double]? {
+        guard data.count >= 16, data.count % 8 == 0 else { return nil }
+        let values = stride(from: 0, to: data.count, by: 8).map { offset -> Double in
+            let raw = data.subdata(in: offset..<offset + 4).withUnsafeBytes { $0.loadUnaligned(as: UInt32.self) }
+            return Double(UInt32(littleEndian: raw))
+        }
+        guard values.first == 0, let top = values.max(), top > 0 else { return nil }
+        let scale = top > 100_000_000 ? 1e-6 : top > 100_000 ? 1e-3 : 1
+        let megahertz = values.map { $0 * scale }
+        // 合理的 GPU 频率范围
+        guard (200...5_000).contains(megahertz.max() ?? 0) else { return nil }
+        return megahertz
+    }
+
+    private static func readGPUFrequencyTable() -> [Double]? {
+        var iterator: io_iterator_t = 0
+        guard IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceMatching("AppleARMIODevice"), &iterator) == KERN_SUCCESS else {
+            return nil
+        }
+        defer { IOObjectRelease(iterator) }
+        while case let entry = IOIteratorNext(iterator), entry != 0 {
+            defer { IOObjectRelease(entry) }
+            var name = [CChar](repeating: 0, count: 128)
+            guard IORegistryEntryGetName(entry, &name) == KERN_SUCCESS,
+                  String(decoding: name.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self) == "pmgr",
+                  let data = IORegistry.property(entry, "voltage-states9") as? Data else { continue }
+            return parseGPUFrequencyTable(data)
         }
         return nil
     }

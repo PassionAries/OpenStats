@@ -20,6 +20,17 @@ import Testing
         #expect(PowerSampler.parseFrequencyTable(Data([1, 2, 3])) == nil)
     }
 
+    @Test func parsesGPUTableAndAveragesActiveStates() {
+        let gpu = PowerSampler.parseGPUFrequencyTable(table([0, 338_000_000, 1_620_000_000]))
+        #expect(gpu == [0, 338, 1620])
+        // CPU 的表（第一项不为 0）不是 GPU 表
+        #expect(PowerSampler.parseGPUFrequencyTable(table([600_000_000, 3_200_000_000])) == nil)
+        // OFF 不计入；P1、P2 各占一半时间，平均频率为两者之间
+        let states: [(name: String, residency: Int64)] = [("OFF", 900), ("P1", 50), ("P2", 50)]
+        #expect(PowerSampler.gpuFrequency(states, table: [0, 338, 1620]) == 979)
+        #expect(PowerSampler.gpuFrequency([("OFF", 100)], table: [0, 338, 1620]) == 0)
+    }
+
     @Test func recognizesComplexChannels() {
         #expect(PowerSampler.complexLetter("ECPU") == "E")
         #expect(PowerSampler.complexLetter("PCPU") == "P")
