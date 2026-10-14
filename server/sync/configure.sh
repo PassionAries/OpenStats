@@ -5,7 +5,7 @@
 #
 #   ./server/sync/configure.sh
 set -euo pipefail
-HOST="${SITE_HOST:-debian@51.38.126.148}"
+HOST="${SITE_HOST:-root@15.204.123.216}"
 KEY="${SITE_KEY:-$HOME/.ssh/gentpan.pem}"
 SSH=(ssh -i "$KEY" -o BatchMode=yes "$HOST")
 
