@@ -10,7 +10,15 @@ extension EnvironmentValues {
     /// 菜单栏弹窗：区块去掉卡片底色，用细分隔线隔开，排得更紧凑
     @Entry var isPopover = false
     /// 菜单栏弹窗：滚动内容的实际高度比可视区域高出（负数为矮出）多少，交给面板调整窗口高度
-    @Entry var reportPopoverOverflow: (@MainActor @Sendable (CGFloat) -> Void)? = nil
+    @Entry var reportPopoverOverflow: PopoverOverflowReporter? = nil
+}
+
+/// 菜单栏弹窗的高度回调。闭包无法比较，直接放进环境会让依赖它的视图每次刷新都失效；
+/// 每个弹窗只在创建时设置一次、之后不变，所以包一层并视为恒等
+struct PopoverOverflowReporter: Equatable {
+    let report: @MainActor @Sendable (CGFloat) -> Void
+
+    static func == (lhs: Self, rhs: Self) -> Bool { true }
 }
 
 // MARK: - 卡片
@@ -889,7 +897,7 @@ struct PageScroll<Content: View>: View {
     /// 弹窗里内容高度一变（数据刷新、展开收起），就让面板把窗口调到正好放下；屏幕放不下时才出现滚动
     private func report() {
         guard let reportOverflow, contentHeight > 0, viewportHeight > 0 else { return }
-        reportOverflow(contentHeight - viewportHeight)
+        reportOverflow.report(contentHeight - viewportHeight)
     }
 }
 

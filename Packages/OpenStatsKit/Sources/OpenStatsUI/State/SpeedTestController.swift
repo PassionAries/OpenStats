@@ -160,9 +160,9 @@ public final class SpeedTestController {
         broadbandTask = Task { [limit, route = settings.speedTestRoute] in
             let path = await resolvePath(route)
             let result = await BroadbandTest.run(limit: limit, path: path) { stage in
-                Task { @MainActor [weak self] in self?.broadbandStage = stage; self?.liveBitsPerSecond = 0 }
+                Task { @MainActor in self.broadbandStage = stage; self.liveBitsPerSecond = 0 }
             } progress: { speed, _ in
-                Task { @MainActor [weak self] in self?.liveBitsPerSecond = speed }
+                Task { @MainActor in self.liveBitsPerSecond = speed }
             }
             guard !Task.isCancelled else { return stopBroadband() }
             broadband = result
@@ -294,7 +294,7 @@ public final class SpeedTestController {
         downloadTask = Task { [limit, route = settings.speedTestRoute] in
             let path = await resolvePath(route)
             let result = await ThroughputProbe.download(node.downloadURL, limit: limit, path: path) { speed, _ in
-                Task { @MainActor [weak self] in self?.liveBitsPerSecond = speed }
+                Task { @MainActor in self.liveBitsPerSecond = speed }
             }
             guard !Task.isCancelled else {
                 downloadingNode = nil
