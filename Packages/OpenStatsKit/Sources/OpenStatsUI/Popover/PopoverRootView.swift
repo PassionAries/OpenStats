@@ -62,6 +62,8 @@ struct PopoverDetail: View {
 
 struct PopoverHeader: View {
     let item: MenuBarItem
+    /// 每项独立的弹窗里放防休眠开关；合并面板的总览底部已有防休眠，各标签页不再重复
+    var showsKeepAwake = true
     @Environment(AppModel.self) private var model
 
     var body: some View {
@@ -75,6 +77,7 @@ struct PopoverHeader: View {
                 .foregroundStyle(DS.Palette.textPrimary)
             Spacer(minLength: DS.Space.s2)
             if item == .memory { PurgeMemoryButton() }
+            if showsKeepAwake { KeepAwakeButton() }
             // 左边的按钮用该指标自己的图标，点进主窗口里它的页面；右边的齿轮进总设置
             let page = PanelTab(item: item)
             MiniIconButton(systemName: page.symbol, help: tr("在主窗口打开“\(page.title)”")) { model.openMainWindow(page) }
@@ -248,6 +251,8 @@ struct CopyableText: View {
 struct MiniIconButton: View {
     let systemName: String
     let help: String
+    /// 开关类按钮开启时用品牌色
+    var isOn = false
     let action: () -> Void
     @State private var hovering = false
 
@@ -255,7 +260,7 @@ struct MiniIconButton: View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
-                .foregroundStyle(hovering ? DS.Palette.textPrimary : DS.Palette.textSecondary)
+                .foregroundStyle(isOn ? DS.Palette.primary : hovering ? DS.Palette.textPrimary : DS.Palette.textSecondary)
                 .frame(width: DS.Size.segmentHeight, height: DS.Size.segmentHeight)
                 .modifier(MiniIconSurface(hovering: hovering))
                 .contentShape(Circle())
@@ -264,6 +269,21 @@ struct MiniIconButton: View {
         .onHover { hovering = $0 }
         .help(help)
         .accessibilityLabel(help)
+        .accessibilityAddTraits(isOn ? .isSelected : [])
+    }
+}
+
+/// 防休眠快捷开关：每个弹窗的标题栏都有，不用进主窗口就能开关
+struct KeepAwakeButton: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        let keepAwake = model.keepAwake
+        MiniIconButton(systemName: keepAwake.isActive ? "cup.and.saucer.fill" : "cup.and.saucer",
+                       help: keepAwake.isActive ? tr("关闭防休眠") : tr("开启防休眠"),
+                       isOn: keepAwake.isActive) {
+            Task { await keepAwake.setActive(!keepAwake.isActive) }
+        }
     }
 }
 

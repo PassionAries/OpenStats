@@ -193,6 +193,22 @@ final class MenuBarController: NSObject {
         menu.addItem(withTitle: tr("打开 OpenStats"), action: #selector(openMainWindow), keyEquivalent: "").target = self
         menu.addItem(withTitle: tr("设置…"), action: #selector(openSettings), keyEquivalent: ",").target = self
         menu.addItem(.separator())
+        // 最常用的两个开关：不用打开面板就能切换
+        let keepAwake = menu.addItem(withTitle: tr("防休眠"), action: #selector(toggleKeepAwake), keyEquivalent: "")
+        keepAwake.target = self
+        keepAwake.state = model.keepAwake.isActive ? .on : .off
+        if !(model.store.sensors?.fans.isEmpty ?? true) {
+            let fanMenu = NSMenu()
+            for mode in FanController.Mode.allCases where mode != .custom {
+                let item = fanMenu.addItem(withTitle: mode.title, action: #selector(selectFanMode(_:)), keyEquivalent: "")
+                item.target = self
+                item.representedObject = mode.rawValue
+                item.state = model.fans.mode == mode ? .on : .off
+            }
+            let fans = menu.addItem(withTitle: tr("风扇"), action: nil, keyEquivalent: "")
+            fans.submenu = fanMenu
+        }
+        menu.addItem(.separator())
         menu.addItem(withTitle: tr("退出 OpenStats"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         statusItem.menu = menu
         statusItem.button?.performClick(nil)
@@ -201,4 +217,13 @@ final class MenuBarController: NSObject {
 
     @objc private func openMainWindow() { model.openMainWindow(nil) }
     @objc private func openSettings() { model.openSettings() }
+    @objc private func toggleKeepAwake() {
+        let keepAwake = model.keepAwake
+        Task { await keepAwake.setActive(!keepAwake.isActive) }
+    }
+
+    @objc private func selectFanMode(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let mode = FanController.Mode(rawValue: raw) else { return }
+        model.requestFanMode(mode)
+    }
 }
