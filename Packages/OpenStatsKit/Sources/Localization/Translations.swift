@@ -1168,6 +1168,8 @@ npm 缓存	npm Cache
 （{}）	 ({})
 ，	, 
 ，{} 项未能移动	, {} couldn't be moved
+项目间距	Item Spacing
+合并显示时菜单栏里各项之间的距离，数值越小越紧凑	Spacing between items in the combined menu bar icon; smaller is more compact
 ，充电中	, charging
 ，已从程序坞移除	, removed from the Dock
 ：{}	: {}

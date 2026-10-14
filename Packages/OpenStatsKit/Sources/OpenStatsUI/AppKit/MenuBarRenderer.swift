@@ -128,7 +128,8 @@ enum MenuBarRenderer {
         /// OpenStats 标志的外框与线宽
         static let logoSize = NSSize(width: 22, height: 14)
         static let logoLine: CGFloat = 1.75
-        static let itemGap = DS.Space.s3
+        /// 合并显示时各项之间的默认间距，可在设置里调整
+        static let itemGap = DS.Space.s2
         static let innerGap = DS.Space.s1
         static let historyCount = 10
         static let historyBarWidth: CGFloat = 2
@@ -161,7 +162,8 @@ enum MenuBarRenderer {
                      style: { settings.style(for: $0) },
                      networkStyle: settings.networkStyle,
                      colorizeHighLoad: settings.colorizeHighLoad,
-                     fahrenheit: settings.useFahrenheit)
+                     fahrenheit: settings.useFahrenheit,
+                     itemGap: CGFloat(settings.menuBarItemSpacing))
     }
 
     static func image(reading: MenuBarReading,
@@ -169,7 +171,8 @@ enum MenuBarRenderer {
                       style: (MenuBarItem) -> MenuBarStyle,
                       networkStyle: NetworkMenuStyle,
                       colorizeHighLoad: Bool,
-                      fahrenheit: Bool) -> NSImage {
+                      fahrenheit: Bool,
+                      itemGap: CGFloat = Metrics.itemGap) -> NSImage {
         var segments: [Segment] = []
         if reading.keepAwake { segments.append(symbolSegment("cup.and.saucer.fill")) }
         for item in items {
@@ -179,12 +182,12 @@ enum MenuBarRenderer {
         // 仅图标或没有开启任何项目：画 OpenStats 标志；防休眠时杯子标记仍在左边
         if items.isEmpty { segments.append(logoSegment()) }
 
-        let width = segments.reduce(0) { $0 + $1.width } + CGFloat(segments.count - 1) * Metrics.itemGap
+        let width = segments.reduce(0) { $0 + $1.width } + CGFloat(segments.count - 1) * itemGap
         let image = NSImage(size: NSSize(width: ceil(width), height: Metrics.barHeight), flipped: false) { rect in
             var x: CGFloat = 0
             for segment in segments {
                 segment.draw(NSRect(x: x, y: rect.minY, width: segment.width, height: rect.height))
-                x += segment.width + Metrics.itemGap
+                x += segment.width + itemGap
             }
             return true
         }

@@ -214,6 +214,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             _ = model.settings.networkStyle
             _ = model.settings.styleOverrides
             _ = model.settings.colorizeHighLoad
+            _ = model.settings.menuBarItemSpacing
             _ = model.settings.useFahrenheit
             _ = model.settings.hiddenPopoverSections
             _ = model.settings.expandedPopoverSections

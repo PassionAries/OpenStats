@@ -406,6 +406,10 @@ public final class AppSettings {
     public var colorizeHighLoad: Bool {
         didSet { defaults.set(colorizeHighLoad, forKey: Keys.colorizeHighLoad) }
     }
+    /// 合并显示时菜单栏里各项之间的间距（pt）
+    public var menuBarItemSpacing: Int {
+        didSet { defaults.set(menuBarItemSpacing, forKey: Keys.menuBarItemSpacing) }
+    }
     /// 键盘、鼠标、耳机等蓝牙设备电量低时，在菜单栏电池项旁提示
     public var bluetoothLowBatteryInMenuBar: Bool {
         didSet { defaults.set(bluetoothLowBatteryInMenuBar, forKey: Keys.bluetoothLowBatteryInMenuBar) }
@@ -512,6 +516,7 @@ public final class AppSettings {
     public static let refreshOptions = [1, 2, 3, 5]
     public static let batteryFloorOptions = [10, 20, 30, 40]
     public static let fanSafetyOptions = [85, 90, 95, 100]
+    public static let menuBarSpacingOptions = [4, 6, 8, 12]
     public static let alertTemperatureOptions = [85, 90, 95, 100]
     public static let alertLoadOptions = [70, 80, 90]
     public static let cpuChartOptions = [60, 180, 300]
@@ -532,6 +537,8 @@ public final class AppSettings {
         refreshSeconds = Self.refreshOptions.contains(defaults.integer(forKey: Keys.refreshSeconds))
             ? defaults.integer(forKey: Keys.refreshSeconds) : 2
         colorizeHighLoad = defaults.bool(forKey: Keys.colorizeHighLoad)
+        menuBarItemSpacing = Self.menuBarSpacingOptions.contains(defaults.integer(forKey: Keys.menuBarItemSpacing))
+            ? defaults.integer(forKey: Keys.menuBarItemSpacing) : 8
         bluetoothLowBatteryInMenuBar = defaults.object(forKey: Keys.bluetoothLowBatteryInMenuBar) as? Bool ?? true
         useFahrenheit = defaults.bool(forKey: Keys.useFahrenheit)
         lidModeBatteryFloor = Self.batteryFloorOptions.contains(defaults.integer(forKey: Keys.lidModeBatteryFloor))
@@ -634,6 +641,7 @@ public final class AppSettings {
         static let styleOverrides = "styleOverrides"
         static let refreshSeconds = "refreshSeconds"
         static let colorizeHighLoad = "colorizeHighLoad"
+        static let menuBarItemSpacing = "menuBarItemSpacing"
         static let bluetoothLowBatteryInMenuBar = "bluetoothLowBatteryInMenuBar"
         static let useFahrenheit = "useFahrenheit"
         static let lidModeBatteryFloor = "lidModeBatteryFloor"

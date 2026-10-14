@@ -85,7 +85,8 @@ final class MenuBarController: NSObject {
                                                                   style: { settings.style(for: $0) },
                                                                   networkStyle: settings.networkStyle,
                                                                   colorizeHighLoad: settings.colorizeHighLoad,
-                                                                  fahrenheit: settings.useFahrenheit)
+                                                                  fahrenheit: settings.useFahrenheit,
+                                                                  itemGap: CGFloat(settings.menuBarItemSpacing))
             entry.statusItem.button?.toolTip = itemsToDraw.isEmpty ? "OpenStats" : reading.tooltip(items: itemsToDraw, fahrenheit: settings.useFahrenheit)
         }
     }

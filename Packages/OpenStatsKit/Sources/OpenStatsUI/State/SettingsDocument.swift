@@ -13,6 +13,7 @@ public struct SettingsDocument: Codable, Equatable, Sendable {
     public var styleOverrides: [String: String]?
     public var refreshSeconds: Int?
     public var colorizeHighLoad: Bool?
+    public var menuBarItemSpacing: Int?
     public var bluetoothLowBatteryInMenuBar: Bool?
     public var useFahrenheit: Bool?
     public var lidModeBatteryFloor: Int?
@@ -48,6 +49,7 @@ extension AppSettings {
         doc.styleOverrides = Dictionary(uniqueKeysWithValues: styleOverrides.map { ($0.key.rawValue, $0.value.rawValue) })
         doc.refreshSeconds = refreshSeconds
         doc.colorizeHighLoad = colorizeHighLoad
+        doc.menuBarItemSpacing = menuBarItemSpacing
         doc.bluetoothLowBatteryInMenuBar = bluetoothLowBatteryInMenuBar
         doc.useFahrenheit = useFahrenheit
         doc.lidModeBatteryFloor = lidModeBatteryFloor
@@ -93,6 +95,7 @@ extension AppSettings {
         })
         assign(\.refreshSeconds, option(doc.refreshSeconds, in: Self.refreshOptions))
         assign(\.colorizeHighLoad, doc.colorizeHighLoad)
+        assign(\.menuBarItemSpacing, option(doc.menuBarItemSpacing, in: Self.menuBarSpacingOptions))
         assign(\.bluetoothLowBatteryInMenuBar, doc.bluetoothLowBatteryInMenuBar)
         assign(\.useFahrenheit, doc.useFahrenheit)
         assign(\.lidModeBatteryFloor, option(doc.lidModeBatteryFloor, in: Self.batteryFloorOptions))

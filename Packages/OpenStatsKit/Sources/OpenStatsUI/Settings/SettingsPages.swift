@@ -354,6 +354,15 @@ struct MenuBarSettings: View {
                     DSToggle(isOn: $settings.colorizeHighLoad, label: tr("高负载时着色"))
                 }
             }
+            if settings.menuBarLayout == .combined {
+                GroupRow {
+                    SettingRow(title: tr("项目间距"), subtitle: tr("合并显示时菜单栏里各项之间的距离，数值越小越紧凑")) {
+                        SegmentedControl(selection: $settings.menuBarItemSpacing,
+                                         options: AppSettings.menuBarSpacingOptions.map { ($0, "\($0) pt") })
+                            .frame(width: DS.Size.sidebarWidth + DS.Space.s12)
+                    }
+                }
+            }
             GroupRow {
                 SettingRow(title: tr("蓝牙设备电量低时提示"),
                            subtitle: tr("键盘、鼠标、耳机等低于 20% 时，在菜单栏的电池项目旁显示该设备的图标与电量；需要开启电池项目")) {
