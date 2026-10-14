@@ -20,7 +20,7 @@ python3 Scripts/sync_changelog.py
 STAMP="$( { cat web/styles.css web/replica.css web/app.js web/replica.js | /usr/bin/sed -E 's/\?v=[A-Za-z0-9]+//g'
            find web/assets -type f | sort | xargs cat; } | shasum -a 256 | cut -c1-8)"
 echo "内容指纹 v=$STAMP"
-/usr/bin/sed -i '' -E "s/\?v=[A-Za-z0-9]+/?v=$STAMP/g" web/index.html
+/usr/bin/sed -i '' -E "s/\?v=[A-Za-z0-9]+/?v=$STAMP/g" web/index.html web/privacy.html
 
 # 目录归部署用户所有，Caddy 只需读取
 "${SSH[@]}" "$HOST" "sudo mkdir -p $ROOT && sudo chown -R \$(id -un):\$(id -gn) $ROOT"
