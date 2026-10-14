@@ -507,9 +507,11 @@ private struct AppUsageList: View {
     let rowCount: Int
     let metric: Metric
     var total: UInt64?
+    /// 上次显示的顺序：仍在前几名的应用留在原位，只更新数值
+    @State private var order = StableOrderMemory<String>()
 
     var body: some View {
-        let visible = Array(apps.prefix(rowCount))
+        let visible = order.arrange(apps, limit: rowCount, id: \.id)
         // 横条以列表里最大的一项为满格，比较谁占得多
         let peak = visible.map { metric == .cpu ? $0.cpu : Double($0.memory) }.max() ?? 1
         if visible.isEmpty {

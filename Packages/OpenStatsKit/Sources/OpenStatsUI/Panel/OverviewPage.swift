@@ -426,10 +426,12 @@ struct BatteryCard: View {
 struct TopProcessesCard: View {
     @Environment(AppModel.self) private var model
     @Environment(\.isSnapshot) private var isSnapshot
+    /// 上次显示的顺序：仍在前几名的进程留在原位，只更新数值
+    @State private var order = StableOrderMemory<Int32>()
     private static let rowCount = 5
 
     var body: some View {
-        let processes = Array(model.store.processes.prefix(Self.rowCount))
+        let processes = order.arrange(model.store.processes, limit: Self.rowCount, id: \.pid)
 
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s1) {

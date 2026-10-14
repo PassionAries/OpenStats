@@ -346,7 +346,8 @@ public final class NetworkController {
 }
 
 extension NetworkController {
-    /// 用最近十几秒的平均流量给进程排序：刚安静下来的进程还会在榜上停留一会儿，列表不会忽隐忽现
+    /// 用最近十几秒的平均流量决定谁上榜：刚安静下来的进程还会在榜上停留一会儿，列表不会忽隐忽现；
+    /// 仍在榜上的进程保持原来的位置，只更新速率
     func rankedProcesses(_ usage: [NetworkProcessUsage]) -> [NetworkProcessUsage] {
         var current: [String: Double] = [:]
         var byID: [String: NetworkProcessUsage] = [:]
@@ -356,7 +357,8 @@ extension NetworkController {
             byID[key] = process
         }
         processRanking.update(current)
-        return processRanking.ranked(limit: 5).compactMap { byID[$0.id] }
+        let ranked = processRanking.ranked(limit: 5).compactMap { byID[$0.id] }
+        return StableOrder.arrange(ranked, previous: processes.map(\.pid), limit: 5, id: \.pid)
     }
 }
 

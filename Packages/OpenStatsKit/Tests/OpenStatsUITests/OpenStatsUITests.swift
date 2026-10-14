@@ -389,6 +389,20 @@ private func isolatedDefaults() -> UserDefaults {
     }
 }
 
+@Suite struct StableOrderTests {
+    @Test func keepsPositionsOfEntriesStillOnTop() {
+        // b 超过 a，但两者都还在前三：位置不变，只有掉出去的 c 的位置换成 d
+        let shown = StableOrder.arrange(["b", "a", "d", "c"], previous: ["a", "b", "c"], limit: 3, id: { $0 })
+        #expect(shown == ["a", "b", "d"])
+    }
+
+    @Test func fillsFromRankingWhenEmptyOrShort() {
+        #expect(StableOrder.arrange(["x", "y", "z"], previous: [String](), limit: 2, id: { $0 }) == ["x", "y"])
+        #expect(StableOrder.arrange(["y", "x"], previous: ["x"], limit: 3, id: { $0 }) == ["x", "y"])
+        #expect(StableOrder.arrange(["y"], previous: ["x", "y"], limit: 3, id: { $0 }) == ["y"])
+    }
+}
+
 @MainActor
 @Suite struct SyncSignInTests {
     /// 系统在后台的 XPC 队列上回调登录结果。回调闭包如果带着主线程隔离，Swift 6 会在入口处中止进程，
