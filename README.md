@@ -6,7 +6,7 @@
 
 **Your Mac at a glance — CPU, GPU, memory, network and temperatures in the menu bar, with fan control, keep-awake, one-click cleanup, an app uninstaller and an IP cleanliness check.**
 
-[![Release](https://img.shields.io/badge/release-0.6.4-6ee02b)](https://getopenstats.com/#download)
+[![Release](https://img.shields.io/badge/release-0.7.0-6ee02b)](https://getopenstats.com/#download)
 [![Stars](https://img.shields.io/github/stars/gentpan/OpenStats?style=flat&color=f5c518&label=stars)](https://github.com/gentpan/OpenStats/stargazers)
 [![Last commit](https://img.shields.io/github/last-commit/gentpan/OpenStats?color=black&label=last%20commit)](https://github.com/gentpan/OpenStats/commits/main)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/gentpan/OpenStats?color=black&label=commits)](https://github.com/gentpan/OpenStats/graphs/commit-activity)
@@ -34,13 +34,13 @@ Everything is read on your own Mac, and there is no telemetry. An account is opt
 
 ## Install
 
-Download OpenStats 0.6.4 from the website (signed with a Developer ID certificate and notarized by Apple) —
+Download OpenStats 0.7.0 from the website (signed with a Developer ID certificate and notarized by Apple) —
 pick the build for your Mac's chip:
 
 | Chip | Download |
 |---|---|
-| Apple silicon (M1, M2, M3, M4, M5) | [OpenStats-0.6.4-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.6.4-AppleSilicon.dmg) |
-| Intel | [OpenStats-0.6.4-Intel.dmg](https://getopenstats.com/download/OpenStats-0.6.4-Intel.dmg) |
+| Apple silicon (M1, M2, M3, M4, M5) | [OpenStats-0.7.0-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.7.0-AppleSilicon.dmg) |
+| Intel | [OpenStats-0.7.0-Intel.dmg](https://getopenstats.com/download/OpenStats-0.7.0-Intel.dmg) |
 
 Not sure? Apple menu › About This Mac says "Chip Apple M…" on Apple silicon and "Processor Intel…" on Intel.
 Homebrew picks the right build for you. Recent Homebrew refuses to load casks from an untrusted third-party
@@ -62,9 +62,46 @@ system language by default; switch it in Settings → General → Language.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.6.4** (2026-10-10) · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.7.0** (2026-10-14) · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
+<summary><b>2026-10-14</b> · 0.7.0 · 7 added · 3 improved · 3 style · 2 changed · 2 fixed</summary>
+
+**Added**
+
+- 菜单栏弹窗的标题栏多了防休眠开关；右键点菜单栏图标可以直接开关防休眠、切换风扇档位（自动 / 降温 / 强冷），不用打开面板。
+- 合并面板的防休眠改为浮出菜单：一键选择 1、2、4、8、12 小时或一直保持，并可切换“屏幕常亮 / 允许关屏”，开启后显示结束时间。主窗口防休眠页的时长同步改为 1 / 2 / 4 / 8 / 12 小时与不限。
+- GPU 详情增加功耗、频率、渲染与拼接利用率和占用内存。
+- 电池详情增加满充 / 设计容量、电压与电流；磁盘详情按卷显示用户数据、系统、启动与恢复、虚拟内存、可清除与空闲，并显示 SSD 健康与累计写入，插着外置磁盘时逐个列出可用与总容量。
+- CPU 页与温度页显示 macOS 报告的热状态；网络页顶部显示连接摘要（接口与本机地址）以及延迟、丢包；内存页常驻交换内存用量。
+- 应用的 CPU 占用可以在“整机 / 单核”之间切换，单核与活动监视器的算法一致，总览的高占用进程同步切换。
+- 合并菜单栏的项目间距可在「设置 · 菜单栏 · 其他」里选择 4 / 6 / 8 / 12 pt。回应 [Issue #9](https://github.com/gentpan/OpenStats/issues/9)。
+
+**Improved**
+
+- 切换风扇档位后每 0.25 秒读一次风扇，“启动中…”和转速变化马上显示，不用再等下一次常规采样；M1–M4 解锁手动控制时不再固定等 3 秒，系统一交出控制权就继续。
+- 高占用进程、按应用汇总和网络进程列表固定名次：仍在前几名的应用留在原位、只更新数值，面板不再上下跳动。
+- 菜单栏弹窗改用接近 macOS 原生的紧凑字号，CPU、内存、磁盘、温度弹窗的次要区块默认收起（可在设置里逐个打开），各弹窗明显变矮，合并面板从接近一屏高降到约 700pt。网络弹窗的连接探测、接口与累计流量、IP 纯净度和 DNS 保持默认显示。
+
+**Style**
+
+- 合并面板重新设计：CPU、GPU、内存三个圆环一行，下面是电池 | 磁盘、网络 | 风扇两列，风扇档位改为下拉菜单，顶部改为一行状态加一行机器信息。
+- 七个详情弹窗统一顶部版式：左边一个主数值，右边三项次要读数；数字常规字重，单位缩小变淡，只有标题用粗体。
+- 内存的压力格子改为用量走势线，线的颜色表示压力；进度条的圆角改为略钝的直角；温度正常时不再着色，偏高变黄、过热变红。
+
+**Changed**
+
+- 合并菜单栏的默认项目间距从 12pt 改为 8pt。
+- 磁盘“读写最多的应用”的数字改为与条形一致的最近十几秒平均速率，不会再出现条形很长、数字却是 0 的情况。
+
+**Fixed**
+
+- 电池电量正好 20% 时，不同位置的颜色不一致。
+- 风扇转速缺少千分位；网络流量峰值的上传、下载顺序与顶部不一致。
+
+</details>
+
+<details>
 <summary><b>2026-10-10</b> · 0.6.4 · 2 fixed · 2 improved · 1 added</summary>
 
 **Fixed**
@@ -91,22 +128,6 @@ Latest release **0.6.4** (2026-10-10) · [full changelog](CHANGELOG.md) (kept in
 - 合并显示时菜单栏的小标签颜色过淡：图标中带有彩色网速圆点时，CPU、内存等标签会直接画成灰色，在深色菜单栏上不容易看清。标签和网速箭头现在与数值使用同一种前景色，仍通过字号区分标签与读数。跟进 [Issue #5](https://github.com/gentpan/OpenStats/issues/5)。
 - 应用卸载的残留查找增强：读取应用真实名称、内嵌辅助组件的包名和签名中的应用组，按容器元数据识别 UUID 命名的沙盒数据；最近文档、CrashReporter、Sparkle、SentryCrash 和厂商目录内的应用子项也会检查。补上 VS Code、Insiders、Arc、Chrome 的明确数据位置。共享容器、按名称找到的 Sentry 数据和可能共用的辅助组件数据会标明并默认不勾选，厂商共享父目录始终保留。扫描及回收前重查路径，跳过符号链接重定向。参考 Pearcleaner 的查找思路，跟进 [Issue #4](https://github.com/gentpan/OpenStats/issues/4)。
 - 应用卸载有部分文件未能移到废纸篓时，只统计实际成功的项目与空间，保留失败项供重试；只有应用本体成功移除才清除程序坞图标和累计卸载次数。
-
-</details>
-
-<details>
-<summary><b>2026-10-01</b> · 0.6.3 · 3 added · 2 changed</summary>
-
-**Added**
-
-- 菜单栏布局多一种“仅图标”：菜单栏只显示 OpenStats 标志，不画任何数值，点击弹出完整面板。原来要把所有显示项目都关掉才能只剩一个图标，而且显示的是通用的心电图符号；现在关掉所有项目时也显示 OpenStats 标志。仅图标模式下“整体风格”和“显示项目”暂不生效，已开启的项目会保留，切回其他布局后恢复。
-- “合并显示”和“仅图标”点开的是完整面板，指标、进程与常用工具集中在一页：顶部是健康评分与芯片、内存、系统、运行时间标签，下面两列卡片显示 CPU、GPU、内存、磁盘、网络、风扇（可直接切换自动 / 降温 / 强冷），再往下是电池、高占用进程，以及摄像头和麦克风是否正在使用、防休眠与清理入口、累计清理记录（已清理空间、已卸载应用、已优化次数）。顶部标签列出这台 Mac 上的全部项目，不再只列菜单栏里开启的。
-- 风扇从停转起步时显示“正在启动风扇…”。Apple 芯片的风扇固件从停转起步要先低速拖转约 5 秒，期间转速读数一直是 0，之前看起来像是点了降温没反应。
-
-**Changed**
-
-- “合并为一个”改名为“合并显示”。
-- 仪表盘的芯片、内存、系统、运行时间、机型标签始终排成一行，放不下时依次省去机型、把运行时间缩成最大单位。
 
 </details>
 
