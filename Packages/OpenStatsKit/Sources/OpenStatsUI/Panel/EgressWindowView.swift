@@ -139,7 +139,7 @@ private struct OverviewCard: View {
         Card(spacing: DS.Space.s4) {
             HStack(alignment: .top, spacing: DS.Space.s3) {
                 Image(systemName: summary.icon)
-                    .font(.system(size: DS.TextSize.lg.rawValue, weight: .semibold))
+                    .dsFont(.lg, weight: .semibold)
                     .foregroundStyle(summary.tone.color)
                     .frame(width: DS.Space.s8 + DS.Space.s2, height: DS.Space.s8 + DS.Space.s2)
                     .background(summary.tone.color.opacity(0.12), in: Circle())

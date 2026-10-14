@@ -112,7 +112,7 @@ struct HealthHeader<Accessory: View>: View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             HStack(alignment: .center, spacing: DS.Space.s3) {
                 Image(systemName: report.tone == .success ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
-                    .font(.system(size: DS.TextSize.xl.rawValue, weight: .semibold))
+                    .dsFont(.xl, weight: .semibold)
                     .foregroundStyle(report.tone.color)
                 Text(verbatim: "\(report.score)")
                     .dsFont(.xxl, weight: .semibold)
@@ -140,7 +140,7 @@ struct HealthHeader<Accessory: View>: View {
         let store = model.store
         return HStack(spacing: DS.Space.s2) {
             Chip(text: chipName(store.topology.brand), icon: "apple.logo")
-            Chip(text: Format.bytes(ProcessInfo.processInfo.physicalMemory).replacingOccurrences(of: ".0 ", with: " "))
+            Chip(text: Format.capacity(ProcessInfo.processInfo.physicalMemory))
             Chip(text: store.system.osVersion)
             if showsUptime, let boot = store.system.bootDate {
                 Chip(text: tr("已运行 ") + Format.uptime(since: boot, compact: compactUptime))
@@ -192,7 +192,7 @@ struct CPUTile: View {
 
         MetricTile(icon: "cpu", title: "CPU",
                    chip: temperature.map { Format.temperature($0.maximum, fahrenheit: model.settings.useFahrenheit) },
-                   chipTone: temperature.map { Tone.forTemperature($0.maximum) } ?? .neutral,
+                   chipTone: temperature.map { Tone.forTemperatureText($0.maximum) } ?? .neutral,
                    value: store.cpu == nil ? "—" : "\(Int((total * 100).rounded()))", unit: "%") {
             BarHistoryChart(values: store.cpuTotal.elements, capacity: 20, height: DS.Size.tileChart)
         } footer: {
@@ -211,7 +211,7 @@ struct GPUTile: View {
 
         MetricTile(icon: "display", title: "GPU",
                    chip: temperature.map { Format.temperature($0.maximum, fahrenheit: model.settings.useFahrenheit) },
-                   chipTone: temperature.map { Tone.forTemperature($0.maximum) } ?? .neutral,
+                   chipTone: temperature.map { Tone.forTemperatureText($0.maximum) } ?? .neutral,
                    value: store.gpu == nil ? "—" : "\(Int((utilization * 100).rounded()))", unit: "%") {
             LineHistoryChart(values: store.gpuHistory.elements, capacity: 30, color: DS.Palette.secondary, height: DS.Size.tileChart)
         } footer: {
@@ -228,7 +228,7 @@ struct MemoryTile: View {
 
         MetricTile(icon: "memorychip", title: tr("内存"),
                    chip: memory.map { tr("压力 \($0.pressure.title)") },
-                   chipTone: memory.map { tone($0.pressure) } ?? .neutral,
+                   chipTone: memory.map(\.pressure.tone) ?? .neutral,
                    value: memory.map { "\(Int(($0.usedFraction * 100).rounded()))" } ?? "—", unit: "%") {
             LineHistoryChart(values: model.store.memoryHistory.elements, capacity: 30, height: DS.Size.tileChart)
         } footer: {
@@ -236,13 +236,6 @@ struct MemoryTile: View {
         }
     }
 
-    private func tone(_ pressure: MemoryPressure) -> Tone {
-        switch pressure {
-        case .normal: .success
-        case .warning: .warning
-        case .critical: .error
-        }
-    }
 }
 
 struct DiskTile: View {
@@ -252,7 +245,7 @@ struct DiskTile: View {
         let disk = model.store.disk
 
         MetricTile(icon: "internaldrive", title: tr("磁盘"),
-                   chip: disk.map { Format.bytes($0.total, base: .decimal).replacingOccurrences(of: ".0 ", with: " ") },
+                   chip: disk.map { Format.capacity($0.total, base: .decimal) },
                    value: disk.map { "\(Int(($0.usedFraction * 100).rounded()))" } ?? "—", unit: "%") {
             VStack {
                 Spacer()
@@ -303,11 +296,11 @@ struct FanTile: View {
         let fans = model.store.sensors?.fans ?? []
         let fastest = model.store.fastestFan
         // 以最高转速为 100%，比“最低到最高”的区间比例更直观
-        let average = fans.isEmpty ? 0 : fans.map { $0.maximum > 0 ? $0.current / $0.maximum : 0 }.reduce(0, +) / Double(fans.count)
+        let average = fans.isEmpty ? 0 : fans.map(\.fraction).reduce(0, +) / Double(fans.count)
 
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s1) {
-                Image(systemName: "fan").font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
+                Image(systemName: "fan").dsFont(.xs, weight: .semibold)
                 Text(tr("风扇")).dsFont(.xs, weight: .semibold)
                 Spacer(minLength: DS.Space.s1)
                 if !fans.isEmpty { Chip(text: tr("转速 \(Format.percent(average))")) }
@@ -348,7 +341,7 @@ private struct CoreLoadCard: View {
         let cpu = model.store.cpu
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s1) {
-                Image(systemName: "square.grid.3x3.fill").font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
+                Image(systemName: "square.grid.3x3.fill").dsFont(.xs, weight: .semibold)
                 Text(tr("核心负载")).dsFont(.xs, weight: .semibold)
                 Spacer()
                 LegendItem(color: DS.Palette.primary, label: tr("用户"), value: cpu.map { Format.percent($0.user) } ?? "—")
@@ -367,11 +360,11 @@ struct BatteryCard: View {
 
     var body: some View {
         if let battery = model.store.battery {
-            let tone: Tone = battery.level < 0.2 ? .error : battery.isCharging ? .primary : .success
+            let tone = battery.tone
             Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
                 HStack(spacing: DS.Space.s1) {
                     Image(systemName: battery.isCharging ? "battery.100.bolt" : "battery.75")
-                        .font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
+                        .dsFont(.xs, weight: .semibold)
                     Text(tr("电池")).dsFont(.xs, weight: .semibold)
                     Spacer(minLength: DS.Space.s1)
                     if let health = battery.health {
@@ -395,10 +388,11 @@ struct BatteryCard: View {
                                 .foregroundStyle(DS.Palette.warning)
                         }
                     }
+                    .lineLimit(1)
                     Spacer(minLength: 0)
                     RingGauge(fraction: battery.level, color: tone.color, size: DS.Space.s12 + DS.Space.s2) {
                         Image(systemName: "laptopcomputer")
-                            .font(.system(size: DS.TextSize.sm.rawValue, weight: .medium))
+                            .dsFont(.sm, weight: .medium)
                             .foregroundStyle(DS.Palette.textSecondary)
                     }
                 }
@@ -435,11 +429,13 @@ struct TopProcessesCard: View {
 
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s1) {
-                Image(systemName: "chart.bar.fill").font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
+                Image(systemName: "chart.bar.fill").dsFont(.xs, weight: .semibold)
                 Text(tr("高占用进程")).dsFont(.xs, weight: .semibold)
                 Spacer()
                 Text("CPU").dsFont(.xs, weight: .medium).frame(width: DS.Size.valueColumn, alignment: .trailing)
-                    .help(tr("占整机 CPU 的比例：\(Format.logicalCores) 个核心全部跑满为 100%"))
+                    .help(model.settings.cpuSharePerCore
+                          ? tr("按单核满载为 100% 计（活动监视器的算法），可在 CPU 详情里切换")
+                          : tr("占整机 CPU 的比例：\(Format.logicalCores) 个核心全部跑满为 100%，可在 CPU 详情里切换"))
                 Text(tr("内存")).dsFont(.xs, weight: .medium).frame(width: DS.Size.valueColumn, alignment: .trailing)
                 Color.clear.frame(width: DS.Size.iconInline)
             }
@@ -460,10 +456,11 @@ struct TopProcessesCard: View {
                         .foregroundStyle(DS.Palette.textPrimary)
                         .lineLimit(1)
                     Spacer(minLength: DS.Space.s2)
-                    Text(verbatim: Format.machineShare(process.cpu))
+                    Text(verbatim: model.settings.cpuSharePerCore ? Format.coreShare(process.cpu) : Format.machineShare(process.cpu))
                         .dsFont(.sm, weight: .medium)
                         .foregroundStyle(cpuTone(process.cpu).color)
-                        .help(tr("按单核满载为 100% 计：\(Format.coreShare(process.cpu))"))
+                        .help(model.settings.cpuSharePerCore ? tr("占整机：\(Format.machineShare(process.cpu))")
+                                                             : tr("按单核满载为 100% 计：\(Format.coreShare(process.cpu))"))
                         .frame(width: DS.Size.valueColumn, alignment: .trailing)
                     Text(verbatim: Format.bytes(process.memory))
                         .dsFont(.sm)
@@ -479,7 +476,7 @@ struct TopProcessesCard: View {
     @ViewBuilder
     private func moreButton(_ process: ProcessUsage) -> some View {
         let icon = Image(systemName: "ellipsis")
-            .font(.system(size: DS.TextSize.xs.rawValue, weight: .bold))
+            .dsFont(.xs, weight: .bold)
             .foregroundStyle(DS.Palette.textTertiary)
             .frame(width: DS.Size.iconInline)
         if isSnapshot {
@@ -526,7 +523,7 @@ private struct QuickActionsCard: View {
         let fans = model.fans
         Card(padding: DS.Space.s3, spacing: 0) {
             HStack(spacing: DS.Space.s1) {
-                Image(systemName: "switch.2").font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
+                Image(systemName: "switch.2").dsFont(.xs, weight: .semibold)
                 Text(tr("快捷开关")).dsFont(.xs, weight: .semibold)
             }
             .foregroundStyle(DS.Palette.textSecondary)
@@ -560,7 +557,7 @@ private struct QuickToggleRow: View {
     var body: some View {
         HStack(spacing: DS.Space.s2) {
             Image(systemName: icon)
-                .font(.system(size: DS.TextSize.sm.rawValue, weight: .medium))
+                .dsFont(.sm, weight: .medium)
                 .foregroundStyle(isOn ? DS.Palette.primary : DS.Palette.textSecondary)
                 .frame(width: DS.Size.iconStandalone)
             VStack(alignment: .leading, spacing: 0) {

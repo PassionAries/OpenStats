@@ -50,39 +50,25 @@ private struct BatteryHero: View {
     var body: some View {
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
             if let battery {
-                let tone: Tone = battery.level <= 0.2 ? .error : battery.isCharging ? .primary : .success
-                HStack(spacing: DS.Space.s3) {
-                    RingGauge(fraction: battery.level, color: tone.color, size: DS.Space.s12 + DS.Space.s2) {
-                        Image(systemName: battery.isCharging ? "bolt.fill" : "laptopcomputer")
-                            .font(.system(size: DS.TextSize.sm.rawValue, weight: .medium))
-                            .foregroundStyle(battery.isCharging ? DS.Palette.primary : DS.Palette.textSecondary)
-                    }
-                    VStack(alignment: .leading, spacing: DS.Space.s1 / 2) {
-                        HeroValue(value: Format.percent(battery.level))
-                        Text(battery.stateText)
-                            .dsFont(.xs, weight: .medium)
-                            .foregroundStyle(DS.Palette.textSecondary)
-                        if let minutes = battery.minutesRemaining {
-                            Text(battery.isCharging ? tr("\(Format.duration(minutes: minutes))后充满") : tr("还能用 \(Format.duration(minutes: minutes))"))
-                                .dsFont(.xs)
-                                .foregroundStyle(DS.Palette.textTertiary)
-                        }
-                    }
-                    Spacer(minLength: 0)
-                    VStack(alignment: .trailing, spacing: DS.Space.s1) {
-                        if let watts = battery.adapterWatts, battery.isPluggedIn {
-                            Chip(text: "\(watts) W", icon: "bolt.fill", tone: .warning)
-                        }
-                        if let temperature = model.store.sensors?.temperature(.battery) {
-                            Chip(text: Format.temperature(temperature.maximum, fahrenheit: model.settings.useFahrenheit),
-                                 icon: "thermometer.medium", tone: Tone.forTemperature(temperature.maximum))
-                        }
-                    }
-                }
+                let tone = battery.tone
+                let temperature = model.store.sensors?.temperature(.battery)
+                PopoverHero(label: tr("电量"), value: Format.percent(battery.level), valueColor: tone.color, splitsUnit: false,
+                            caption: caption(battery),
+                            stats: [
+                                HeroStat(label: battery.isPluggedIn ? tr("电源") : tr("耗电"),
+                                         value: battery.isPluggedIn ? battery.adapterWatts.map { "\($0) W" } ?? "—"
+                                                                    : model.store.power?.battery.map { Format.watts(abs($0)) } ?? "—"),
+                                HeroStat(label: tr("温度"),
+                                         value: temperature.map { Format.temperature($0.maximum, fahrenheit: model.settings.useFahrenheit) } ?? "—",
+                                         tone: temperature.map { Tone.forTemperatureText($0.maximum) } ?? .neutral),
+                                HeroStat(label: tr("健康"), value: battery.health.map(Format.percent) ?? "—",
+                                         tone: (battery.health ?? 1) < 0.8 ? .warning : .neutral),
+                            ])
+                ProgressTrack(fraction: battery.level, color: tone.color, height: DS.Space.s2 + DS.Space.s1 / 2)
             } else {
                 HStack(spacing: DS.Space.s3) {
                     Image(systemName: "desktopcomputer")
-                        .font(.system(size: DS.TextSize.lg.rawValue))
+                        .dsFont(.lg)
                         .foregroundStyle(DS.Palette.textSecondary)
                     VStack(alignment: .leading, spacing: DS.Space.s1 / 2) {
                         Text(tr("这台 Mac 没有电池")).dsFont(.sm, weight: .semibold).foregroundStyle(DS.Palette.textPrimary)
@@ -95,7 +81,34 @@ private struct BatteryHero: View {
     }
 }
 
+extension BatteryHero {
+    /// 状态，后面跟剩余或充满所需时间；接着电源时写一个闪电
+    func caption(_ battery: BatteryStatus) -> String {
+        var parts = [battery.isPluggedIn ? "⚡︎ " + battery.stateText : battery.stateText]
+        if let minutes = battery.minutesRemaining {
+            parts.append(battery.isCharging ? tr("\(Format.duration(minutes: minutes))后充满") : tr("还能用 \(Format.duration(minutes: minutes))"))
+        }
+        return parts.joined(separator: " · ")
+    }
+}
+
+extension MemoryPressure {
+    /// 内存压力的颜色：正常绿色、偏高橙色、严重红色
+    var tone: Tone {
+        switch self {
+        case .normal: .success
+        case .warning: .warning
+        case .critical: .error
+        }
+    }
+}
+
 extension BatteryStatus {
+    /// 电量颜色：低于 20% 红色，充电中蓝色，其余绿色。各处的电量条、圆环与数字都用它
+    var tone: Tone {
+        level < 0.2 ? .error : isCharging ? .primary : .success
+    }
+
     /// 充电中 / 已充满 / 电源供电 / 电池供电
     var stateText: String {
         if isCharging { return tr("充电中") }
@@ -145,13 +158,24 @@ private struct BatteryHealthSection: View {
                 Text(verbatim: battery.health.map { Format.percent($0) } ?? "—")
                     .foregroundStyle(battery.health.map { $0 < 0.8 ? DS.Palette.warning : DS.Palette.textPrimary } ?? DS.Palette.textPrimary)
             }
-            InfoRow(label: tr("循环次数"), text: battery.cycleCount.map(String.init) ?? "—")
-            if let temperature = model.store.sensors?.temperature(.battery) {
-                InfoRow(label: tr("电池温度"), text: Format.temperature(temperature.maximum, fahrenheit: model.settings.useFahrenheit))
+            InfoRow(label: tr("循环次数"), text: battery.cycleCount.map { $0.formatted() } ?? "—")
+            // 温度与电源已在顶部；这里放顶部没有的电芯读数
+            if let full = battery.fullChargeCapacity, let design = battery.designCapacity {
+                InfoRow(label: tr("满充 / 设计容量")) {
+                    UnitText(text: "\(full.formatted()) / \(design.formatted()) mAh", size: .xs)
+                }
             }
-            InfoRow(label: tr("电源"), text: battery.isPluggedIn
-                    ? tr("电源适配器\(battery.adapterWatts.map { " · \($0)W" } ?? "")")
-                    : tr("电池供电"))
+            if let voltage = battery.voltage {
+                InfoRow(label: tr("电压")) {
+                    UnitText(text: "\(voltage.formatted(.number.precision(.fractionLength(2)))) V", size: .xs)
+                }
+            }
+            if let amperage = battery.amperage {
+                InfoRow(label: abs(amperage) < 0.01 ? tr("电流") : amperage < 0 ? tr("放电电流") : tr("充电电流")) {
+                    UnitText(text: "\(abs(amperage).formatted(.number.precision(.fractionLength(2)))) A", size: .xs)
+                }
+                .help(tr("电池此刻的电流；接着电源时也可能短暂由电池补电"))
+            }
             Text(tr("健康度是现在充满时的容量与出厂容量之比，低于 80% 时苹果建议更换电池"))
                 .dsFont(.xs)
                 .foregroundStyle(DS.Palette.textTertiary)
@@ -200,7 +224,7 @@ struct BluetoothDeviceList: View {
             ForEach(devices) { device in
                 HStack(spacing: DS.Space.s2) {
                     Image(systemName: device.kind.symbol)
-                        .font(.system(size: DS.TextSize.sm.rawValue))
+                        .dsFont(.sm)
                         .foregroundStyle(DS.Palette.textSecondary)
                         .frame(width: DS.Size.iconStandalone)
                     Text(verbatim: device.name)

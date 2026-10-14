@@ -40,6 +40,7 @@ struct PopoverFrame<Header: View, Content: View>: View {
         .overlay {
             RoundedRectangle(cornerRadius: DS.Radius.xl).strokeBorder(DS.Palette.border, lineWidth: DS.Size.stroke)
         }
+        .environment(\.isCompactText, true)
     }
 }
 
@@ -69,7 +70,7 @@ struct PopoverHeader: View {
     var body: some View {
         HStack(spacing: DS.Space.s2) {
             Image(systemName: item.symbol)
-                .font(.system(size: DS.TextSize.sm.rawValue, weight: .semibold))
+                .dsFont(.sm, weight: .semibold)
                 .foregroundStyle(DS.Palette.textSecondary)
                 .frame(width: DS.Size.iconStandalone)
             Text(item.popoverTitle)
@@ -111,7 +112,7 @@ struct SectionCard<Trailing: View, Content: View>: View {
                 }
                 if let hint {
                     Image(systemName: "info.circle")
-                        .font(.system(size: DS.TextSize.xs.rawValue, weight: .medium))
+                        .dsFont(.xs, weight: .medium)
                         .foregroundStyle(DS.Palette.textTertiary)
                         .help(hint)
                         .accessibilityLabel(hint)
@@ -166,7 +167,7 @@ struct CollapsedSection: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                     Image(systemName: "chevron.down")
-                        .font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
+                        .dsFont(.xs, weight: .semibold)
                         .foregroundStyle(DS.Palette.textTertiary)
                 }
                 .frame(height: DS.Size.segmentHeight)
@@ -259,7 +260,7 @@ struct MiniIconButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
+                .dsFont(.xs, weight: .semibold)
                 .foregroundStyle(isOn ? DS.Palette.primary : hovering ? DS.Palette.textPrimary : DS.Palette.textSecondary)
                 .frame(width: DS.Size.segmentHeight, height: DS.Size.segmentHeight)
                 .modifier(MiniIconSurface(hovering: hovering))
@@ -337,24 +338,81 @@ struct RefreshButton: View {
     }
 }
 
-/// 弹窗顶部的大号数值
-struct HeroValue: View {
+/// 详情弹窗顶部的统一版式，七个弹窗共用：左边一个主数值（常规字重，单位缩小变淡，与总览圆环的百分号一致），
+/// 上面一行小标签、下面一行说明；右边最多三行“标签 数值”的次要读数，右对齐
+struct PopoverHero: View {
+    let label: String
     let value: String
-    var unit: String?
-    var size: DS.TextSize = .xl
+    var valueColor: Color = DS.Palette.textPrimary
+    /// 为 false 时整串同一字号（电池电量的百分号不缩小）
+    var splitsUnit = true
+    var caption: String?
+    var captionTone: Tone = .neutral
+    var stats: [HeroStat] = []
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1 / 2) {
-            Text(verbatim: value)
-                .dsFont(size, weight: .semibold)
-                .monospacedDigit()
-                .foregroundStyle(DS.Palette.textPrimary)
-            if let unit {
-                Text(verbatim: unit).dsFont(.xs, weight: .medium).foregroundStyle(DS.Palette.textSecondary)
+        HStack(alignment: .center, spacing: DS.Space.s3) {
+            VStack(alignment: .leading, spacing: DS.Space.s1 / 2) {
+                Text(verbatim: label).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary).lineLimit(1)
+                Group {
+                    if splitsUnit {
+                        UnitText(text: value, size: .xxl, color: valueColor)
+                    } else {
+                        Text(verbatim: value).dsFont(.xxl).monospacedDigit().foregroundStyle(valueColor).lineLimit(1)
+                    }
+                }
+                .fixedSize()
+                if let caption {
+                    Text(verbatim: caption)
+                        .dsFont(.xs)
+                        .monospacedDigit()
+                        .foregroundStyle(captionTone == .neutral ? DS.Palette.textSecondary : captionTone.color)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                }
+            }
+            .layoutPriority(1)
+            Spacer(minLength: DS.Space.s2)
+            if !stats.isEmpty {
+                VStack(alignment: .trailing, spacing: DS.Space.s1) {
+                    ForEach(stats) { stat in
+                        HStack(spacing: DS.Space.s1) {
+                            Text(verbatim: stat.label).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary).lineLimit(1)
+                            UnitText(text: stat.value, size: .sm, color: stat.tone == .neutral ? DS.Palette.textPrimary : stat.tone.color)
+                                .fixedSize()
+                        }
+                        .help(optional: stat.help)
+                    }
+                }
             }
         }
-        .lineLimit(1)
     }
+}
+
+/// macOS 自己报告的热状态：比读传感器更权威，偏高及以上表示系统已经在限制性能降温
+enum ThermalStateInfo {
+    @MainActor
+    static var current: (title: String, tone: Tone) {
+        switch ProcessInfo.processInfo.thermalState {
+        case .nominal: (tr("正常"), .neutral)
+        case .fair: (tr("偏高"), .warning)
+        case .serious: (tr("严重"), .error)
+        case .critical: (tr("危急"), .error)
+        @unknown default: (tr("未知"), .neutral)
+        }
+    }
+
+    static let help = tr("macOS 报告的热状态：偏高及以上时，系统会降低性能来降温")
+}
+
+/// 顶部右侧的一行次要读数
+struct HeroStat: Identifiable {
+    let label: String
+    let value: String
+    var tone: Tone = .neutral
+    var help: String?
+
+    var id: String { label }
 }
 
 /// 固定行数的进程列表，数据不足时用占位行，弹窗高度保持不变
@@ -362,6 +420,8 @@ struct ProcessList<Row: View>: View {
     let count: Int
     var rowCount = 5
     var emptyText = tr("正在统计…")
+    /// 不满一页时写在第一个空行里的说明，免得空着几行像没加载完
+    var restText: String?
     @ViewBuilder var row: (Int) -> Row
 
     var body: some View {
@@ -378,13 +438,22 @@ struct ProcessList<Row: View>: View {
             ForEach(0..<min(count, rowCount), id: \.self) { index in
                 row(index).frame(height: Self.rowHeight)
             }
-            ForEach(0..<max(0, rowCount - count), id: \.self) { _ in
-                Color.clear.frame(height: Self.rowHeight)
+            ForEach(0..<max(0, rowCount - count), id: \.self) { index in
+                if index == 0, let restText {
+                    Text(restText)
+                        .dsFont(.xs)
+                        .foregroundStyle(DS.Palette.textTertiary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(height: Self.rowHeight)
+                } else {
+                    Color.clear.frame(height: Self.rowHeight)
+                }
             }
         }
     }
 
-    static var rowHeight: CGFloat { DS.Size.iconInline + DS.Space.s1 }
+    /// 与同类应用的进程行高相近（约 18～22pt）
+    static var rowHeight: CGFloat { DS.Size.iconInline + DS.Space.s1 / 2 }
 }
 
 struct ProcessNameLabel: View {

@@ -109,7 +109,7 @@ struct ProcessesPage: View {
         HStack(spacing: DS.Space.s3) {
             HStack(spacing: DS.Space.s2) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
+                    .dsFont(.xs, weight: .semibold)
                     .foregroundStyle(DS.Palette.textTertiary)
                 TextField(tr("搜索名称、PID 或用户"), text: $search)
                     .textFieldStyle(.plain)
@@ -547,7 +547,7 @@ private struct ProcessExplanationCard: View {
             Card(padding: DS.Space.s4, spacing: DS.Space.s3) {
                 HStack(spacing: DS.Space.s2) {
                     Image(systemName: "sparkles")
-                        .font(.system(size: DS.TextSize.sm.rawValue, weight: .semibold))
+                        .dsFont(.sm, weight: .semibold)
                         .foregroundStyle(DS.Palette.primary)
                     Text(tr("Apple 智能解释")).dsFont(.sm, weight: .semibold).foregroundStyle(DS.Palette.textPrimary)
                     Text(verbatim: "\(subject.displayName) · PID \(subject.pid)")

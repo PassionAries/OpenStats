@@ -14,6 +14,7 @@ public struct SettingsDocument: Codable, Equatable, Sendable {
     public var refreshSeconds: Int?
     public var colorizeHighLoad: Bool?
     public var menuBarItemSpacing: Int?
+    public var cpuSharePerCore: Bool?
     public var bluetoothLowBatteryInMenuBar: Bool?
     public var useFahrenheit: Bool?
     public var lidModeBatteryFloor: Int?
@@ -50,6 +51,7 @@ extension AppSettings {
         doc.refreshSeconds = refreshSeconds
         doc.colorizeHighLoad = colorizeHighLoad
         doc.menuBarItemSpacing = menuBarItemSpacing
+        doc.cpuSharePerCore = cpuSharePerCore
         doc.bluetoothLowBatteryInMenuBar = bluetoothLowBatteryInMenuBar
         doc.useFahrenheit = useFahrenheit
         doc.lidModeBatteryFloor = lidModeBatteryFloor
@@ -96,6 +98,7 @@ extension AppSettings {
         assign(\.refreshSeconds, option(doc.refreshSeconds, in: Self.refreshOptions))
         assign(\.colorizeHighLoad, doc.colorizeHighLoad)
         assign(\.menuBarItemSpacing, option(doc.menuBarItemSpacing, in: Self.menuBarSpacingOptions))
+        assign(\.cpuSharePerCore, doc.cpuSharePerCore)
         assign(\.bluetoothLowBatteryInMenuBar, doc.bluetoothLowBatteryInMenuBar)
         assign(\.useFahrenheit, doc.useFahrenheit)
         assign(\.lidModeBatteryFloor, option(doc.lidModeBatteryFloor, in: Self.batteryFloorOptions))

@@ -240,7 +240,7 @@ private struct VolumesCard: View {
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
                         HStack(spacing: DS.Space.s2) {
                             Image(systemName: volume.isLocal ? (volume.isInternal ? "internaldrive" : "externaldrive") : "network")
-                                .font(.system(size: DS.TextSize.base.rawValue))
+                                .dsFont(.base)
                                 .foregroundStyle(DS.Palette.textSecondary)
                                 .frame(width: DS.Size.iconStandalone)
                             Text(verbatim: volume.name).dsFont(.sm, weight: .medium).foregroundStyle(DS.Palette.textPrimary).lineLimit(1)
@@ -283,9 +283,8 @@ private struct CapacityCard: View {
                 Text(verbatim: "%").dsFont(.sm).foregroundStyle(DS.Palette.textSecondary)
                 Spacer()
             }
-            SegmentedBar(segments: disk.map(DiskSegments.segments) ?? DiskSegments.placeholder)
-            if let disk {
-                DiskSegments.legend(disk)
+            DiskComposition(disk: disk)
+            if disk != nil {
                 Text(tr("可清除是系统随时可以腾出的缓存；访达显示的“可用”把它算在内"))
                     .dsFont(.xs)
                     .foregroundStyle(DS.Palette.textTertiary)
@@ -295,38 +294,35 @@ private struct CapacityCard: View {
     }
 }
 
-/// 容量分段：已用（超过 90% 变橙）、可清除、可用，主窗口卡片与菜单栏弹窗共用
-enum DiskSegments {
-    static func segments(_ disk: DiskUsage) -> [SegmentedBar.Segment] {
-        var segments = [SegmentedBar.Segment(id: "used", label: tr("已用"), fraction: disk.usedFraction,
-                                             color: disk.usedFraction > 0.9 ? DS.Palette.warning : DS.Palette.primary)]
-        if disk.purgeable > 0 {
-            segments.append(SegmentedBar.Segment(id: "purgeable", label: tr("可清除"), fraction: disk.purgeableFraction,
-                                                 color: DS.Palette.secondary))
-        }
-        segments.append(SegmentedBar.Segment(id: "free", label: tr("可用"), fraction: disk.freeFraction, color: DS.Palette.neutral500))
-        return segments
-    }
+/// 启动磁盘里装了什么：与内存水位同样的宽条，下面两列图例。
+/// 系统卷、用户数据、虚拟内存、启动与恢复等辅助卷、可清除缓存、可用；拿不到分卷数据时退回“已用 / 可清除 / 可用”。
+/// 主窗口卡片与详情弹窗共用；总览里只画一条与电池条同高的细条，组成写在悬停提示里
+struct DiskComposition: View {
+    let disk: DiskUsage?
 
-    static let placeholder = [SegmentedBar.Segment(id: "loading", label: "", fraction: 1, color: DS.Palette.track)]
-
-    @ViewBuilder
-    static func legend(_ disk: DiskUsage) -> some View {
-        // 放不下就换行，不压缩每一项
-        FlowLayout(spacing: DS.Space.s4) {
-            ForEach(segments(disk)) { segment in
-                LegendItem(color: segment.color, label: segment.label, value: Format.bytes(bytes(for: segment.id, in: disk), base: .decimal))
-                    .fixedSize()
-            }
+    var body: some View {
+        let items = disk.map(Self.items) ?? []
+        WaterlineBar(segments: items.map { (Double($0.bytes), $0.color) }, total: Double(disk?.total ?? 1))
+        if !items.isEmpty {
+            WaterlineLegend(items: items.map { .init(label: $0.label, value: Format.bytes($0.bytes, base: .decimal),
+                                                     color: $0.color, help: $0.help) })
         }
     }
 
-    private static func bytes(for id: String, in disk: DiskUsage) -> UInt64 {
-        switch id {
-        case "used": disk.used
-        case "purgeable": disk.purgeable
-        default: disk.free
+    static func items(_ disk: DiskUsage) -> [(label: String, bytes: UInt64, color: Color, help: String?)] {
+        guard let parts = disk.breakdown else {
+            return [(tr("已用"), disk.used, disk.usedFraction > 0.9 ? DS.Palette.warning : DS.Palette.primary, nil),
+                    (tr("可清除"), disk.purgeable, DS.Palette.primarySoft, nil),
+                    (tr("空闲"), disk.free, DS.Palette.track, nil)]
         }
+        return [
+            (tr("用户数据"), parts.data, DS.Palette.primary, tr("应用、文稿、照片与各种用户资料")),
+            (tr("系统"), parts.system, DS.Palette.secondary, tr("只读的 macOS 系统卷")),
+            (tr("启动与恢复"), parts.other, DS.Palette.neutral500, tr("启动、恢复、更新等系统辅助卷与快照")),
+            (tr("虚拟内存"), parts.virtualMemory, DS.Palette.warning, tr("交换文件与睡眠镜像")),
+            (tr("可清除"), parts.purgeable, DS.Palette.primarySoft, tr("系统随时可以腾出的缓存")),
+            (tr("空闲"), parts.free, DS.Palette.track, tr("真正空着的空间，不含可清除的缓存")),
+        ]
     }
 }
 
@@ -454,7 +450,7 @@ private struct DiskProcessRows: View {
     let rowCount: Int
 
     var body: some View {
-        // 顺序和条形长度按最近十几秒的平均速率，数字显示当前速率：列表不会随每秒的波动跳动
+        // 顺序、条形长度与数字都按最近十几秒的平均速率：列表不随每秒的波动跳动，数字与条形也对得上
         let grouped = Dictionary(uniqueKeysWithValues: ProcessRowModel.grouped(model.store.processes).map { ($0.id, $0) })
         let rows = model.store.diskRanking.ranked(limit: rowCount)
             .compactMap { entry in grouped[entry.id].map { ($0, entry.score) } }
@@ -474,7 +470,7 @@ private struct DiskProcessRows: View {
                         .foregroundStyle(DS.Palette.textPrimary)
                         .lineLimit(1)
                     Spacer(minLength: DS.Space.s2)
-                    Text(verbatim: tr("读 \(Format.menuBarRate(row.disk?.read ?? 0)) · 写 \(Format.menuBarRate(row.disk?.write ?? 0))"))
+                    Text(verbatim: tr("读 \(Format.menuBarRate(model.store.diskReadAverage.scores[row.id] ?? 0)) · 写 \(Format.menuBarRate(model.store.diskWriteAverage.scores[row.id] ?? 0))"))
                         .dsFont(.xs, weight: .medium)
                         .foregroundStyle(DS.Palette.textPrimary)
                         .monospacedDigit()
@@ -551,7 +547,8 @@ struct DiskPopover: View {
                     }
                 }
             case .diskProcesses:
-                SectionCard(title: section.title, trailing: { Text(tr("只含当前用户的进程")) }) {
+                SectionCard(title: section.title, hint: tr("只含当前用户的进程；数字与条形都是最近十几秒的平均速率"),
+                            trailing: { Text(tr("最近十几秒平均")) }) {
                     DiskProcessRows(rowCount: 5)
                 }
             default:
@@ -561,43 +558,50 @@ struct DiskPopover: View {
     }
 }
 
-/// 磁盘弹窗顶部：已用百分比、卷名与总容量、可用空间，下面是用量条
+/// 磁盘弹窗顶部：占用比例与卷名，右侧是可用、可清除与 SSD 健康，下面是磁盘组成的水位条与图例；
+/// 插着外置磁盘时在下面逐个列出
 private struct DiskHero: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
         let disk = model.store.disk
+        let health = model.store.diskHealth
         let fraction = disk?.usedFraction ?? 0
-        let color = fraction > 0.9 ? DS.Palette.warning : DS.Palette.primary
+        let volumes = model.diskTools.volumes.filter { !$0.isInternal }
 
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
-            HStack(alignment: .center, spacing: DS.Space.s3) {
-                HeroValue(value: disk.map { "\(Int(($0.usedFraction * 100).rounded()))" } ?? "—", unit: "%", size: .xxl)
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text(verbatim: disk?.volumeName ?? tr("启动磁盘"))
-                        .dsFont(.sm, weight: .semibold)
-                        .foregroundStyle(DS.Palette.textPrimary)
-                        .lineLimit(1)
-                    Text(verbatim: disk.map { tr("共 \(Format.bytes($0.total, base: .decimal))") } ?? tr("读取中"))
+            PopoverHero(label: tr("磁盘占用"), value: disk.map { Format.percent($0.usedFraction) } ?? "—",
+                        caption: disk.map { "\($0.volumeName) · " + tr("共 \(Format.bytes($0.total, base: .decimal))") } ?? tr("读取中"),
+                        stats: [
+                            HeroStat(label: tr("可用"), value: disk.map { Format.bytes($0.available, base: .decimal) } ?? "—",
+                                     tone: fraction > 0.9 ? .warning : .neutral),
+                            health.map { health in
+                                HeroStat(label: tr("SSD 健康"), value: "\(health.remainingLife)%",
+                                         tone: health.tone == .success ? .neutral : health.tone, help: health.summary)
+                            },
+                            health.map { health in
+                                HeroStat(label: tr("已写入"), value: Format.bytes(health.bytesWritten, base: .decimal),
+                                         help: tr("这块 SSD 出厂以来累计写入的数据量"))
+                            },
+                        ].compactMap { $0 })
+            // 磁盘里装了什么：水位条加两列图例
+            DiskComposition(disk: disk)
+            // 外置硬盘、U 盘、镜像与网络共享
+            ForEach(volumes) { volume in
+                HStack(spacing: DS.Space.s2) {
+                    Image(systemName: volume.isLocal ? "externaldrive" : "network")
                         .dsFont(.xs)
                         .foregroundStyle(DS.Palette.textSecondary)
+                        .frame(width: DS.Size.iconInline)
+                    Text(verbatim: volume.name).dsFont(.xs).foregroundStyle(DS.Palette.textPrimary).lineLimit(1)
+                    Spacer(minLength: DS.Space.s2)
+                    Text(verbatim: tr("可用 \(Format.bytes(volume.available, base: .decimal)) / 共 \(Format.bytes(volume.total, base: .decimal))"))
+                        .dsFont(.xs)
+                        .monospacedDigit()
+                        .foregroundStyle(DS.Palette.textSecondary)
+                        .lineLimit(1)
                 }
-                Spacer(minLength: DS.Space.s2)
-                if let disk {
-                    VStack(alignment: .trailing, spacing: 0) {
-                        Text(tr("可用")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
-                        Text(verbatim: Format.bytes(disk.available, base: .decimal))
-                            .dsFont(.base, weight: .semibold)
-                            .monospacedDigit()
-                            .foregroundStyle(color)
-                    }
-                }
-            }
-            SegmentedBar(segments: disk.map(DiskSegments.segments) ?? DiskSegments.placeholder, height: DS.Space.s6)
-            if let disk {
-                DiskSegments.legend(disk)
             }
         }
-        .help(tr("可清除是系统随时可以腾出的缓存；访达显示的“可用”把它算在内"))
     }
 }

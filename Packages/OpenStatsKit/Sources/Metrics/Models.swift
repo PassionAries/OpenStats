@@ -91,8 +91,6 @@ public struct DiskUsage: Sendable, Equatable {
     public var usedFraction: Double { total == 0 ? 0 : Double(used) / Double(total) }
     /// 不含可清除部分的真正空闲空间
     public var free: UInt64 { available - purgeable }
-    public var purgeableFraction: Double { total == 0 ? 0 : Double(purgeable) / Double(total) }
-    public var freeFraction: Double { total == 0 ? 0 : Double(free) / Double(total) }
     /// 启动磁盘里都装了什么；不是 APFS 系统卷布局时为 nil
     public var breakdown: DiskBreakdown?
 }

@@ -33,7 +33,6 @@ public final class MetricsStore {
 
     public private(set) var memory: MemoryUsage?
     public private(set) var memoryHistory = History<Double>(capacity: historyCapacity)
-    public private(set) var pressureHistory = History<MemoryPressure>(capacity: historyCapacity)
     /// 交换区换入 / 换出速率（字节 / 秒）
     public private(set) var swapRate: (swapIn: Double, swapOut: Double)?
     @ObservationIgnored private var lastSwap: (date: Date, swapIn: UInt64, swapOut: UInt64)?
@@ -44,12 +43,17 @@ public final class MetricsStore {
 
     public private(set) var gpu: GPUUsage?
     public private(set) var gpuHistory = History<Double>(capacity: historyCapacity)
+    /// 最快那台风扇的转速占其最高转速的比例
+    public private(set) var fanHistory = History<Double>(capacity: historyCapacity)
     public private(set) var disk: DiskUsage?
     /// 启动时读取一次，确保面板首次打开时布局（是否有电池卡片）就已确定
     public private(set) var battery: BatteryStatus? = BatterySampler.sample()
     public private(set) var processes: [ProcessUsage] = []
     /// 按应用汇总的磁盘读写排行，分数是最近十几秒的平均速率
     private(set) var diskRanking = ActivityRanking()
+    /// 读、写各自的平均速率，与排行用同样的平滑，列表里的数字和条形长度出自同一段时间
+    private(set) var diskReadAverage = ActivityRanking()
+    private(set) var diskWriteAverage = ActivityRanking()
     public private(set) var systemCounts: SystemCounts?
     public private(set) var sensors: SensorReadings?
     public private(set) var power: PowerReading?
@@ -83,7 +87,6 @@ public final class MetricsStore {
         if let memory = snapshot.memory {
             self.memory = memory
             memoryHistory.append(memory.usedFraction)
-            pressureHistory.append(memory.pressure)
             if let last = lastSwap, snapshot.date > last.date {
                 let seconds = snapshot.date.timeIntervalSince(last.date)
                 swapRate = (Double(memory.swapInBytes >= last.swapIn ? memory.swapInBytes - last.swapIn : 0) / seconds,
@@ -106,13 +109,25 @@ public final class MetricsStore {
         if let processes = snapshot.processes {
             self.processes = processes
             var activity: [String: Double] = [:]
+            var reads: [String: Double] = [:]
+            var writes: [String: Double] = [:]
             for row in ProcessRowModel.grouped(processes) {
                 activity[row.id] = row.disk.map { $0.read + $0.write } ?? 0
+                reads[row.id] = row.disk?.read ?? 0
+                writes[row.id] = row.disk?.write ?? 0
             }
             diskRanking.update(activity)
+            diskReadAverage.update(reads)
+            diskWriteAverage.update(writes)
         }
         if let counts = snapshot.systemCounts { systemCounts = counts }
-        if let sensors = snapshot.sensors { mergeSensors(sensors) }
+        if let sensors = snapshot.sensors {
+            mergeSensors(sensors)
+            // 只记常规采样，切换档位时的快速读数不进历史，保证曲线的时间间隔一致
+            if let fan = sensors.fans.max(by: { $0.current < $1.current }), fan.maximum > 0 {
+                fanHistory.append(fan.fraction)
+            }
+        }
     }
 
     /// 切换风扇档位后单独刷新的风扇读数，温度保持不变

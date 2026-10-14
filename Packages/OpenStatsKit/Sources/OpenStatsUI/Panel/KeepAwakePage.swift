@@ -35,7 +35,7 @@ private struct HeroCard: View {
                     .frame(width: DS.Space.s12 - DS.Space.s2, height: DS.Space.s12 - DS.Space.s2)
                     .overlay {
                         Image(systemName: keepAwake.isActive ? "cup.and.saucer.fill" : "cup.and.saucer")
-                            .font(.system(size: DS.TextSize.lg.rawValue, weight: .medium))
+                            .dsFont(.lg, weight: .medium)
                             .foregroundStyle(keepAwake.isActive ? DS.Palette.onPrimary : DS.Palette.textSecondary)
                     }
                 VStack(alignment: .leading, spacing: DS.Space.s1 / 2) {

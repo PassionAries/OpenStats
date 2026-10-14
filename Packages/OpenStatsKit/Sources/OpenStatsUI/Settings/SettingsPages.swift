@@ -560,7 +560,7 @@ private struct StyleCard: View {
                     Spacer()
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: DS.TextSize.sm.rawValue))
+                            .dsFont(.sm)
                             .foregroundStyle(DS.Palette.primary)
                     }
                 }
@@ -785,7 +785,7 @@ private struct CapabilityLine: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
             Image(systemName: "checkmark")
-                .font(.system(size: DS.TextSize.xs.rawValue, weight: .bold))
+                .dsFont(.xs, weight: .bold)
                 .foregroundStyle(DS.Palette.success)
             Text(text).dsFont(.sm).foregroundStyle(DS.Palette.textSecondary)
         }

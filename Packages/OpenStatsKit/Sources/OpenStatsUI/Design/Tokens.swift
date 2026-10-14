@@ -96,6 +96,21 @@ extension NSColor {
 extension DS {
     enum TextSize: CGFloat {
         case xs = 12, sm = 14, base = 16, lg = 20, xl = 24, xxl = 32
+
+        /// 菜单栏弹窗用的紧凑字号，接近 macOS 原生菜单栏面板与同类应用（正文 12～13pt、辅助 11pt）。
+        /// 弹窗里内容密、空间小，按主窗口的字号排会撑到快一整屏高
+        var compact: CGFloat {
+            switch self {
+            case .xs: 11
+            case .sm: 12
+            case .base: 13
+            case .lg: 16
+            case .xl: 19
+            case .xxl: 26
+            }
+        }
+
+        func points(compact: Bool) -> CGFloat { compact ? self.compact : rawValue }
     }
 
     /// 徽章配色：浅底、细边、深字，与 cleanip.io 的徽章一致
@@ -147,6 +162,12 @@ extension DS {
         static let md: CGFloat = 8
         static let lg: CGFloat = 12
         static let xl: CGFloat = 16   // 弹窗
+
+        /// 进度条与水位条的圆角：随条的高度变化，约为高度的 30%、最多 3pt。
+        /// 只把角磨钝一点，不做成两头全圆的胶囊，也不是纯直角
+        static func bar(_ height: CGFloat) -> CGFloat {
+            max(1, min(3, height * 0.3))
+        }
     }
 
     enum Size {
@@ -167,7 +188,7 @@ extension DS {
         /// 菜单栏单项详情弹窗的宽度
         static let popoverWidth: CGFloat = 320
         /// 菜单栏合并为一个图标时的面板：总览是两列卡片，比单项详情宽一些
-        static let dashboardPopoverWidth: CGFloat = 360
+        static let dashboardPopoverWidth: CGFloat = 368
         static let panelMinHeight: CGFloat = 320
         static let panelGap: CGFloat = 4
         /// 窗口顶栏高度：标准工具栏的标题栏（52pt），红绿灯、页面标题与右上角 32pt 的按钮在同一条水平线上，按钮上下各留 10pt
@@ -218,15 +239,30 @@ extension DS {
 // MARK: - 修饰器
 
 extension View {
+    /// 设计系统字号；在菜单栏弹窗里（`isCompactText`）自动换成紧凑字号
     func dsFont(_ size: DS.TextSize, weight: Font.Weight = .regular) -> some View {
-        font(.system(size: size.rawValue, weight: weight))
+        modifier(DSFontModifier(size: size, weight: weight))
     }
-
 }
 
-extension Text {
-    func dsFont(_ size: DS.TextSize, weight: Font.Weight = .regular) -> Text {
-        font(.system(size: size.rawValue, weight: weight))
+private struct DSFontModifier: ViewModifier {
+    let size: DS.TextSize
+    let weight: Font.Weight
+    @Environment(\.isCompactText) private var compact
+
+    func body(content: Content) -> some View {
+        content.font(.system(size: size.points(compact: compact), weight: Self.resolved(weight, for: size)))
+    }
+
+    /// 小字（正文、标签、进程名）整体降一档：半粗显示为中等、中等显示为常规，界面不会满屏加粗；
+    /// 强调靠颜色与层级区分。大号数字（lg 及以上）保持原字重，仍然醒目
+    static func resolved(_ weight: Font.Weight, for size: DS.TextSize) -> Font.Weight {
+        guard size.rawValue < DS.TextSize.lg.rawValue else { return weight }
+        switch weight {
+        case .semibold: return .medium
+        case .medium: return .regular
+        default: return weight
+        }
     }
 }
 

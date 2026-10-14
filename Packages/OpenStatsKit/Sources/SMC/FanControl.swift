@@ -29,10 +29,10 @@ public struct FanState: Sendable, Equatable, Identifiable {
         self.isStarting = isStarting
     }
 
-    /// 当前转速在 min...max 区间的占比
+    /// 当前转速占这台风扇最高转速的比例（以最高转速为 100%，比“最低到最高”的区间比例更直观）
     public var fraction: Double {
-        guard maximum > minimum else { return 0 }
-        return min(1, max(0, (current - minimum) / (maximum - minimum)))
+        guard maximum > 0 else { return 0 }
+        return min(1, max(0, current / maximum))
     }
 }
 

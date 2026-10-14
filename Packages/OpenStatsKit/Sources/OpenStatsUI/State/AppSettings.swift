@@ -102,9 +102,16 @@ public enum PopoverSection: String, CaseIterable, Identifiable, Sendable {
 
     public var id: String { rawValue }
 
-    /// 弹窗默认不显示的区块（主窗口详情页始终显示）：热力图已经能看出各核心此刻的占用，
-    /// 每核柱状图给想要一眼看清单个核心的人在设置里打开，避免弹窗默认太长
-    static let hiddenByDefault: Set<PopoverSection> = [.cpuCores]
+    /// 弹窗默认不显示的区块（主窗口详情页始终显示），弹窗默认只留最常看的内容，不至于撑满一屏：
+    /// CPU 留热力图与按应用汇总（本机不像服务器那样需要看 1/5/15 分钟负载）；内存留水位与按应用；
+    /// 网络留流量、IP 与进程；磁盘留读写速度与应用；温度留温度与风扇。其余在设置里逐个打开
+    static let hiddenByDefault: Set<PopoverSection> = [
+        .cpuCores, .cpuClusters, .cpuLoadAverage,
+        .memoryCompression,
+        .networkProbe, .networkInterface, .networkPurity, .networkDNS,
+        .diskHealth,
+        .thermalPower,
+    ]
 
     var title: String {
         switch self {
@@ -406,6 +413,10 @@ public final class AppSettings {
     public var colorizeHighLoad: Bool {
         didSet { defaults.set(colorizeHighLoad, forKey: Keys.colorizeHighLoad) }
     }
+    /// 应用的 CPU 占用按单核满载为 100% 显示（活动监视器的算法）；默认按整机
+    public var cpuSharePerCore: Bool {
+        didSet { defaults.set(cpuSharePerCore, forKey: Keys.cpuSharePerCore) }
+    }
     /// 合并显示时菜单栏里各项之间的间距（pt）
     public var menuBarItemSpacing: Int {
         didSet { defaults.set(menuBarItemSpacing, forKey: Keys.menuBarItemSpacing) }
@@ -537,6 +548,7 @@ public final class AppSettings {
         refreshSeconds = Self.refreshOptions.contains(defaults.integer(forKey: Keys.refreshSeconds))
             ? defaults.integer(forKey: Keys.refreshSeconds) : 2
         colorizeHighLoad = defaults.bool(forKey: Keys.colorizeHighLoad)
+        cpuSharePerCore = defaults.bool(forKey: Keys.cpuSharePerCore)
         menuBarItemSpacing = Self.menuBarSpacingOptions.contains(defaults.integer(forKey: Keys.menuBarItemSpacing))
             ? defaults.integer(forKey: Keys.menuBarItemSpacing) : 8
         bluetoothLowBatteryInMenuBar = defaults.object(forKey: Keys.bluetoothLowBatteryInMenuBar) as? Bool ?? true
@@ -642,6 +654,7 @@ public final class AppSettings {
         static let refreshSeconds = "refreshSeconds"
         static let colorizeHighLoad = "colorizeHighLoad"
         static let menuBarItemSpacing = "menuBarItemSpacing"
+        static let cpuSharePerCore = "cpuSharePerCore"
         static let bluetoothLowBatteryInMenuBar = "bluetoothLowBatteryInMenuBar"
         static let useFahrenheit = "useFahrenheit"
         static let lidModeBatteryFloor = "lidModeBatteryFloor"

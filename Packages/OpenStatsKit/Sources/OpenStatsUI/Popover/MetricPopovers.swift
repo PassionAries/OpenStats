@@ -4,18 +4,12 @@ import Metrics
 import SMC
 import SwiftUI
 
-private let heroGauge = DS.Space.s12 + DS.Space.s2
-
 extension View {
     /// 详情图表高度：弹窗里紧凑，主窗口里放大
     @MainActor
     func detailChartHeight(_ isDetailPage: Bool) -> CGFloat {
         isDetailPage ? DS.Size.chartHeight * 3 : DS.Size.chartHeight
     }
-}
-
-private func loadTone(_ value: Double) -> Tone {
-    value >= 0.85 ? .error : value >= 0.6 ? .warning : .primary
 }
 
 // MARK: - CPU
@@ -92,12 +86,13 @@ struct CPUPopover: View {
                     let value = averages[safe: index] ?? 0
                     ShareRow(label: label,
                              value: tr("每核 \((value / cores).formatted(.number.precision(.fractionLength(2))))"),
-                             fraction: value / cores, color: loadTone(value / cores).color)
+                             fraction: value / cores, color: Tone.forLoad(value / cores, normal: .primary).color)
                 }
             }
         case .cpuApps:
             SectionCard(title: section.title,
-                        hint: tr("每个应用占整机 CPU 的比例：\(Format.logicalCores) 个核心全部跑满为 100%，与顶部的总占用是同一把尺子。鼠标悬停在数值上可以看按单核计的占用（活动监视器的算法）")) {
+                        hint: tr("整机：\(Format.logicalCores) 个核心全部跑满为 100%，与顶部的总占用是同一把尺子。单核：一个核心跑满为 100%，与活动监视器一致，多线程应用可以超过 100%"),
+                        trailing: { CPUShareToggle() }) {
                 AppUsageList(apps: AppUsage.group(store.processes).sorted { $0.cpu > $1.cpu },
                              rowCount: isDetailPage ? 10 : 6, metric: .cpu)
             }
@@ -170,7 +165,7 @@ private struct CoreRingGrid: View {
                         ForEach(cluster.coreIndices, id: \.self) { index in
                             let value = perCore[safe: index] ?? 0
                             VStack(spacing: DS.Space.s1) {
-                                RingGauge(fraction: value, color: loadTone(value).color, size: Self.ring) {
+                                RingGauge(fraction: value, color: Tone.forLoad(value, normal: .primary).color, size: Self.ring) {
                                     Text(verbatim: Format.percent(value))
                                         .dsFont(.xs, weight: .semibold)
                                         .monospacedDigit()
@@ -191,7 +186,7 @@ private struct CoreRingGrid: View {
     }
 }
 
-/// CPU 顶部：大号占用、状态、与 30 秒前相比的变化、CPU 温度（附离 100°C 的余量），
+/// CPU 顶部：占用、与 30 秒前相比的变化，右侧是状态、温度与 macOS 热状态，
 /// 下面是最近 1 / 3 / 5 分钟的走势线（主窗口里更高，带百分比刻度、参考线与时间轴）、峰值和用户 / 系统 / 空闲构成
 private struct CPUHero: View {
     @Environment(AppModel.self) private var model
@@ -210,31 +205,18 @@ private struct CPUHero: View {
         let timeline = store.cpuTimeline.elements.filter { $0.date >= end.addingTimeInterval(-duration) }
 
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
-            HStack(alignment: .center, spacing: DS.Space.s3) {
-                HeroValue(value: cpu.map { "\(Int(($0.total * 100).rounded()))" } ?? "—", unit: "%", size: .xxl)
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    StatusBadge(text: status(total), tone: total >= 0.85 ? .error : total >= 0.6 ? .warning : .success)
-                    Text(verbatim: trend(history))
-                        .dsFont(.xs)
-                        .foregroundStyle(DS.Palette.textSecondary)
-                        .monospacedDigit()
-                }
-                Spacer(minLength: DS.Space.s2)
-                if let temperature {
-                    let hottest = temperature.maximum
-                    VStack(alignment: .trailing, spacing: 0) {
-                        Text(tr("CPU 温度")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
-                        Text(verbatim: Format.temperature(hottest, fahrenheit: fahrenheit))
-                            .dsFont(.base, weight: .semibold)
-                            .monospacedDigit()
-                            .foregroundStyle(Tone.forTemperature(hottest).color)
-                        Text(verbatim: tr("余量 \(headroom(hottest, fahrenheit: fahrenheit))"))
-                            .dsFont(.xs)
-                            .foregroundStyle(DS.Palette.textTertiary)
-                    }
-                    .help(tr("核心最高温度；余量是离 100°C 还差多少度，越接近 0 越可能因过热降频"))
-                }
-            }
+            let thermal = ThermalStateInfo.current
+            let statusTone = Tone.forLoad(total, normal: .neutral)
+            PopoverHero(label: tr("CPU 占用"), value: cpu.map { "\(Int(($0.total * 100).rounded()))%" } ?? "—",
+                        caption: trend(history),
+                        stats: [
+                            HeroStat(label: tr("状态"), value: status(total), tone: statusTone),
+                            HeroStat(label: tr("温度"),
+                                     value: temperature.map { Format.temperature($0.maximum, fahrenheit: fahrenheit) } ?? "—",
+                                     tone: temperature.map { Tone.forTemperatureText($0.maximum) } ?? .neutral,
+                                     help: tr("各核心里的最高温度")),
+                            HeroStat(label: tr("热状态"), value: thermal.title, tone: thermal.tone, help: ThermalStateInfo.help),
+                        ])
             if isDetailPage {
                 HStack(spacing: DS.Space.s2) {
                     PercentAxis(height: DS.Size.chartHeight * 2)
@@ -278,12 +260,6 @@ private struct CPUHero: View {
         total >= 0.85 ? tr("满载") : total >= 0.6 ? tr("繁忙") : total >= 0.25 ? tr("适中") : tr("空闲")
     }
 
-    /// 离 100°C 还差多少度；华氏制下按温差换算（差 45°C 即差 81°F）
-    private func headroom(_ celsius: Double, fahrenheit: Bool) -> String {
-        let degrees = max(0, 100 - celsius)
-        return fahrenheit ? "\(Int((degrees * 9 / 5).rounded()))°F" : "\(Int(degrees.rounded()))°C"
-    }
-
     /// 与大约 30 秒前（第 15 个采样之前）相比的变化
     private func trend(_ history: [Double]) -> String {
         guard history.count > 15, let now = history.last else { return tr("正在收集走势…") }
@@ -296,6 +272,29 @@ private struct CPUHero: View {
     /// 时间轴刻度：走势只有几分钟，带秒才分得开；小时固定两位，零点前后宽度不变
     private static func clock(_ date: Date) -> String {
         date.formatted(Date.FormatStyle(locale: L10n.locale).hour(.twoDigits(amPM: .omitted)).minute(.twoDigits).second(.twoDigits))
+    }
+}
+
+/// 应用 CPU 占用的口径：整机 / 单核，与走势时长选择同样的小字标签
+private struct CPUShareToggle: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        let settings = model.settings
+        HStack(spacing: DS.Space.s2) {
+            ForEach([false, true], id: \.self) { perCore in
+                let selected = settings.cpuSharePerCore == perCore
+                Button { settings.cpuSharePerCore = perCore } label: {
+                    Text(perCore ? tr("单核") : tr("整机"))
+                        .dsFont(.xs, weight: selected ? .semibold : .regular)
+                        .foregroundStyle(selected ? DS.Palette.primary : DS.Palette.textTertiary)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+        }
+        .help(tr("应用占用的计算口径：整机或单核（活动监视器）"))
     }
 }
 
@@ -377,20 +376,7 @@ struct MemoryPopover: View {
                             (tr("空闲"), memory.free, DS.Palette.track),
                         ]
                         WaterlineBar(segments: parts.map { (Double($0.1), $0.2) }, total: Double(memory.total))
-                        LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible())], spacing: DS.Space.s2) {
-                            ForEach(parts, id: \.0) { part in
-                                HStack(spacing: DS.Space.s1) {
-                                    RoundedRectangle(cornerRadius: DS.Radius.sm / 2).fill(part.2)
-                                        .frame(width: DS.Size.barHeight, height: DS.Size.barHeight)
-                                    Text(part.0).dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
-                                        .lineLimit(1)
-                                        .layoutPriority(1)
-                                    Spacer(minLength: DS.Space.s1)
-                                    Text(verbatim: Format.bytes(part.1)).dsFont(.xs, weight: .medium).monospacedDigit()
-                                        .foregroundStyle(DS.Palette.textPrimary)
-                                }
-                            }
-                        }
+                        WaterlineLegend(items: parts.map { .init(label: $0.0, value: Format.bytes($0.1), color: $0.2) })
                     }
                 }
             case .memoryCompression:
@@ -420,7 +406,7 @@ struct MemoryPopover: View {
     }
 }
 
-/// 内存顶部：可用多少、压力状态、最近一分钟的压力走势
+/// 内存顶部：占用比例，右侧是可用、压力与交换，下面是最近 60 秒的用量走势（颜色表示压力）
 private struct MemoryHero: View {
     @Environment(AppModel.self) private var model
 
@@ -429,41 +415,31 @@ private struct MemoryHero: View {
         let memory = store.memory
 
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
-            HStack(alignment: .center, spacing: DS.Space.s3) {
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(tr("还可用")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
-                    HeroValue(value: memory.map { availableNumber($0.available) } ?? "—", unit: "GB", size: .xxl)
-                }
-                Spacer(minLength: DS.Space.s2)
-                VStack(alignment: .trailing, spacing: DS.Space.s1) {
-                    StatusBadge(text: tr("压力\(memory?.pressure.title ?? "—")"), tone: tone(memory?.pressure))
-                    Text(verbatim: memory.map { tr("已用 \(Format.bytes($0.used)) · \(Format.percent($0.usedFraction))") } ?? "")
-                        .dsFont(.xs)
-                        .foregroundStyle(DS.Palette.textSecondary)
-                        .monospacedDigit()
-                }
-            }
-            PressureStrip(history: store.pressureHistory.elements)
+            let pressureTone = memory?.pressure.tone ?? .neutral
+            PopoverHero(label: tr("内存占用"), value: memory.map { Format.percent($0.usedFraction) } ?? "—",
+                        caption: memory.map { tr("已用 \(Format.bytes($0.used)) / 共 \(Format.bytes($0.total))") },
+                        stats: [
+                            HeroStat(label: tr("可用"), value: memory.map { Format.bytes($0.available) } ?? "—"),
+                            HeroStat(label: tr("压力"), value: memory?.pressure.title ?? "—",
+                                     tone: pressureTone == .success ? .neutral : pressureTone,
+                                     help: tr("内存压力由 macOS 判断：变黄或变红说明内存不够用，系统开始压缩或写入磁盘")),
+                            HeroStat(label: tr("交换"), value: memory.map { $0.swapUsed > 0 ? Format.bytes($0.swapUsed) : tr("未使用") } ?? "—",
+                                     tone: (memory?.swapUsed ?? 0) > 1_073_741_824 ? .warning : .neutral,
+                                     help: tr("写到磁盘上的内存。长期使用较多说明内存不够用，会拖慢速度")),
+                        ])
+            // 用量走势，线的颜色跟着内存压力：正常绿色、偏高橙色、严重红色。
+            // 压力只有三档且几乎总是“正常”，单独画成一排格子会像一条满格的进度条，看不出东西
+            LineHistoryChart(values: store.memoryHistory.elements, maxValue: 1,
+                             color: pressureTone == .neutral ? DS.Palette.textTertiary : pressureTone.color,
+                             height: DS.Space.s6)
             HStack {
-                Text(tr("压力走势")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+                Text(tr("用量走势")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
                 Spacer()
                 Text(tr("最近 60 秒")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
             }
         }
     }
 
-    private func availableNumber(_ bytes: UInt64) -> String {
-        (Double(bytes) / 1_073_741_824).formatted(.number.precision(.fractionLength(1)))
-    }
-
-    private func tone(_ pressure: MemoryPressure?) -> Tone {
-        switch pressure {
-        case .normal: .success
-        case .warning: .warning
-        case .critical: .error
-        case nil: .neutral
-        }
-    }
 }
 
 // MARK: - 按应用汇总
@@ -509,6 +485,9 @@ private struct AppUsageList: View {
     var total: UInt64?
     /// 上次显示的顺序：仍在前几名的应用留在原位，只更新数值
     @State private var order = StableOrderMemory<String>()
+    @Environment(AppModel.self) private var model
+
+    private var sharePerCore: Bool { model.settings.cpuSharePerCore }
 
     var body: some View {
         let visible = order.arrange(apps, limit: rowCount, id: \.id)
@@ -538,7 +517,9 @@ private struct AppUsageList: View {
                         .dsFont(.xs, weight: .medium)
                         .monospacedDigit()
                         .foregroundStyle(DS.Palette.textSecondary)
-                        .help(optional: metric == .cpu ? tr("按单核满载为 100% 计：\(Format.coreShare(app.cpu))") : nil)
+                        .help(optional: metric == .cpu
+                              ? (sharePerCore ? tr("占整机：\(Format.machineShare(app.cpu))") : tr("按单核满载为 100% 计：\(Format.coreShare(app.cpu))"))
+                              : nil)
                 }
                 ProgressTrack(fraction: peak > 0 ? value / peak : 0, color: DS.Palette.primary, height: DS.Space.s1, showsTrack: false)
                     .padding(.leading, DS.Size.iconInline + DS.Space.s2)
@@ -550,8 +531,8 @@ private struct AppUsageList: View {
     private func valueText(_ app: AppUsage) -> String {
         switch metric {
         case .cpu:
-            // 占整机的比例；单核口径的数值放在悬停提示里
-            return Format.machineShare(app.cpu)
+            // 按设置显示整机或单核口径
+            return sharePerCore ? Format.coreShare(app.cpu) : Format.machineShare(app.cpu)
         case .memory:
             guard let total, total > 0 else { return Format.bytes(app.memory) }
             return "\(Format.bytes(app.memory)) · \(Format.percent(Double(app.memory) / Double(total)))"
@@ -654,29 +635,18 @@ struct GPUPopover: View {
         let gpu = store.gpu
         let temperature = store.sensors?.temperature(.gpu)
 
+        let power = store.power
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
-            HStack(spacing: DS.Space.s3) {
-                RingGauge(fraction: gpu?.utilization ?? 0, color: loadTone(gpu?.utilization ?? 0).color, size: heroGauge) {
-                    Text(verbatim: gpu.map { Format.percent($0.utilization) } ?? "—")
-                        .dsFont(.sm, weight: .semibold)
-                        .monospacedDigit()
-                        .foregroundStyle(DS.Palette.textPrimary)
-                }
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text(verbatim: gpu?.name ?? "GPU")
-                        .dsFont(.sm, weight: .semibold)
-                        .foregroundStyle(DS.Palette.textPrimary)
-                        .lineLimit(1)
-                    Text(verbatim: gpu?.coreCount.map { tr("\($0) 核图形处理器") } ?? tr("图形处理器"))
-                        .dsFont(.xs)
-                        .foregroundStyle(DS.Palette.textSecondary)
-                }
-                Spacer(minLength: 0)
-                if let temperature {
-                    Chip(text: Format.temperature(temperature.maximum, fahrenheit: settings.useFahrenheit),
-                         icon: "thermometer.medium", tone: Tone.forTemperature(temperature.maximum))
-                }
-            }
+            PopoverHero(label: tr("GPU 占用"), value: gpu.map { Format.percent($0.utilization) } ?? "—",
+                        caption: [gpu?.name, gpu?.coreCount.map { tr("\($0) 核") }].compactMap { $0 }.joined(separator: " · "),
+                        stats: [
+                            HeroStat(label: tr("温度"),
+                                     value: temperature.map { Format.temperature($0.maximum, fahrenheit: settings.useFahrenheit) } ?? "—",
+                                     tone: temperature.map { Tone.forTemperatureText($0.maximum) } ?? .neutral),
+                            HeroStat(label: tr("功耗"), value: power?.gpu.map(Format.watts) ?? "—"),
+                            HeroStat(label: tr("频率"), value: power?.gpuFrequency.map { $0 > 0 ? Format.frequency(megahertz: $0) : tr("休眠") } ?? "—",
+                                     help: tr("GPU 工作时的平均频率")),
+                        ])
         }
 
         ForEach(MenuBarItem.gpu.popoverSections.filter { isDetailPage || settings.isVisible($0) }) { section in
@@ -686,11 +656,15 @@ struct GPUPopover: View {
                     LineHistoryChart(values: store.gpuHistory.elements, color: DS.Palette.secondary, height: detailChartHeight(isDetailPage))
                 }
             case .gpuDetails:
-                SectionCard(title: section.title) {
-                    InfoRow(label: tr("型号"), text: gpu?.name ?? "—")
-                    InfoRow(label: tr("核心数"), text: gpu?.coreCount.map(String.init) ?? "—")
+                // 型号、核心数、最高温度已在顶部，这里只放顶部没有的运行读数
+                SectionCard(title: section.title,
+                            hint: tr("渲染是着色与像素处理，拼接是几何与图块划分；GPU 与 CPU 共用统一内存")) {
+                    ShareRow(label: tr("渲染"), value: gpu?.rendererUtilization.map(Format.percent) ?? "—",
+                             fraction: gpu?.rendererUtilization ?? 0, color: DS.Palette.secondary)
+                    ShareRow(label: tr("拼接"), value: gpu?.tilerUtilization.map(Format.percent) ?? "—",
+                             fraction: gpu?.tilerUtilization ?? 0, color: DS.Palette.secondary)
+                    InfoRow(label: tr("占用内存"), text: gpu?.memoryInUse.map { Format.bytes($0) } ?? "—")
                     InfoRow(label: tr("平均温度"), text: temperature.map { Format.temperature($0.average, fahrenheit: settings.useFahrenheit) } ?? "—")
-                    InfoRow(label: tr("最高温度"), text: temperature.map { Format.temperature($0.maximum, fahrenheit: settings.useFahrenheit) } ?? "—")
                 }
             default:
                 EmptyView()
@@ -712,19 +686,22 @@ struct ThermalPopover: View {
         let cpu = store.sensors?.temperature(.cpu)
         let fans = store.sensors?.fans ?? []
 
+        let thermal = ThermalStateInfo.current
+        let gpuTemperature = store.sensors?.temperature(.gpu)
+        let batteryTemperature = store.sensors?.temperature(.battery)
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
-            HStack(alignment: .center, spacing: DS.Space.s3) {
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text(tr("CPU 最高")).dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
-                    HeroValue(value: cpu.map { Format.temperature($0.maximum, fahrenheit: settings.useFahrenheit) } ?? "—")
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text(tr("风扇")).dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
-                    HeroValue(value: store.fastestFan.map { Int($0.current).formatted() } ?? "—", unit: fans.isEmpty ? nil : "RPM")
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
+            PopoverHero(label: tr("CPU 最高"),
+                        value: cpu.map { Format.temperature($0.maximum, fahrenheit: settings.useFahrenheit) } ?? "—",
+                        valueColor: cpu.map { Tone.forTemperatureText($0.maximum) }.map { $0 == .neutral ? DS.Palette.textPrimary : $0.color } ?? DS.Palette.textPrimary,
+                        caption: tr("热状态 \(thermal.title)"), captionTone: thermal.tone,
+                        stats: [
+                            gpuTemperature.map { HeroStat(label: "GPU", value: Format.temperature($0.maximum, fahrenheit: settings.useFahrenheit),
+                                                          tone: Tone.forTemperatureText($0.maximum)) },
+                            batteryTemperature.map { HeroStat(label: tr("电池"), value: Format.temperature($0.maximum, fahrenheit: settings.useFahrenheit),
+                                                              tone: Tone.forTemperatureText($0.maximum)) },
+                            HeroStat(label: tr("风扇"), value: store.fastestFan.map { Format.rpm($0.current) } ?? tr("无")),
+                        ].compactMap { $0 })
+                .help(ThermalStateInfo.help)
         }
 
         ForEach(item.popoverSections.filter { isDetailPage || settings.isVisible($0) }) { section in
@@ -747,23 +724,31 @@ struct ThermalPopover: View {
                     }
                 }
             case .thermalFans:
-                SectionCard(title: section.title, trailing: { Text(fanStatusText(fans: fans, mode: model.fans.mode)) }) {
+                // 档位用与总览相同的下拉菜单；状态写在悬停提示里
+                SectionCard(title: section.title, trailing: {
+                    FanModeMenu(selection: model.fans.mode) { model.requestFanMode($0) }
+                        .disabled(fans.isEmpty)
+                        .help(fanStatusText(fans: fans, mode: model.fans.mode))
+                }) {
                     if fans.isEmpty {
                         Text(tr("未检测到风扇")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
                     } else {
                         ForEach(fans) { fan in
                             VStack(spacing: DS.Space.s1) {
-                                InfoRow(label: tr("风扇 \(fan.id + 1)"), text: fan.isStarting ? tr("启动中…") : Format.rpm(fan.current))
-                                ProgressTrack(fraction: fan.maximum > 0 ? fan.current / fan.maximum : 0, height: DS.Space.s1)
-                            }
-                        }
-                        HStack(spacing: DS.Space.s1) {
-                            ForEach([FanController.Mode.automatic, .cooling, .maximum]) { mode in
-                                ChipButton(title: mode.title, isSelected: model.fans.mode == mode) {
-                                    model.requestFanMode(mode)
+                                InfoRow(label: tr("风扇 \(fan.id + 1)")) {
+                                    if fan.isStarting {
+                                        Text(tr("启动中…"))
+                                    } else {
+                                        // 当前转速 / 这台风扇的最高转速
+                                        UnitText(text: "\(Int(fan.current.rounded()).formatted()) / \(Int(fan.maximum.rounded()).formatted()) RPM", size: .xs)
+                                    }
                                 }
+                                ProgressTrack(fraction: fan.fraction, height: DS.Space.s1)
                             }
                         }
+                        Text(fanStatusText(fans: fans, mode: model.fans.mode))
+                            .dsFont(.xs)
+                            .foregroundStyle(DS.Palette.textTertiary)
                     }
                 }
             case .thermalPower:

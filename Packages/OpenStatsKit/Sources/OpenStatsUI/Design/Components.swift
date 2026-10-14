@@ -9,6 +9,8 @@ extension EnvironmentValues {
     @Entry var isDetailPage = false
     /// 菜单栏弹窗：区块去掉卡片底色，用细分隔线隔开，排得更紧凑
     @Entry var isPopover = false
+    /// 菜单栏弹窗（含合并面板的总览）：文字用紧凑字号
+    @Entry var isCompactText = false
     /// 菜单栏弹窗：滚动内容的实际高度比可视区域高出（负数为矮出）多少，交给面板调整窗口高度
     @Entry var reportPopoverOverflow: PopoverOverflowReporter? = nil
 }
@@ -28,6 +30,7 @@ struct Card<Content: View>: View {
     var spacing: CGFloat = DS.Space.s3
     @ViewBuilder var content: Content
     @Environment(\.isPopover) private var isPopover
+    @Environment(\.isCompactText) private var isCompact
 
     var body: some View {
         if isPopover {
@@ -44,10 +47,11 @@ struct Card<Content: View>: View {
     }
 
     private var cardBody: some View {
-        VStack(alignment: .leading, spacing: spacing) {
+        // 合并面板的总览：卡片内边距与行距收紧
+        VStack(alignment: .leading, spacing: isCompact ? min(spacing, DS.Space.s1 + DS.Space.s1 / 2) : spacing) {
             content
         }
-        .padding(padding)
+        .padding(isCompact ? min(padding, DS.Space.s2 + DS.Space.s1 / 2) : padding)
         // 在等高行里撑满高度，背景随之延伸
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(DS.Palette.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
@@ -62,7 +66,7 @@ struct CardHeader<Trailing: View>: View {
     var body: some View {
         HStack(spacing: DS.Space.s2) {
             Image(systemName: icon)
-                .font(.system(size: DS.TextSize.sm.rawValue, weight: .medium))
+                .dsFont(.sm, weight: .medium)
                 .foregroundStyle(DS.Palette.textSecondary)
                 .frame(width: DS.Size.iconInline, height: DS.Size.iconInline)
             Text(title)
@@ -74,11 +78,20 @@ struct CardHeader<Trailing: View>: View {
     }
 }
 
-extension CardHeader where Trailing == Text {
+/// 卡片标题右侧的小字说明
+struct CardHeaderDetail: View {
+    let text: String
+
+    var body: some View {
+        Text(text).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+    }
+}
+
+extension CardHeader where Trailing == CardHeaderDetail {
     init(icon: String, title: String, detail: String) {
         self.icon = icon
         self.title = title
-        self.trailing = Text(detail).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+        self.trailing = CardHeaderDetail(text: detail)
     }
 }
 
@@ -118,59 +131,14 @@ struct ProgressTrack: View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
                 if showsTrack {
-                    RoundedRectangle(cornerRadius: DS.Radius.sm).fill(DS.Palette.track)
+                    RoundedRectangle(cornerRadius: DS.Radius.bar(height), style: .continuous).fill(DS.Palette.track)
                 }
-                RoundedRectangle(cornerRadius: DS.Radius.sm)
+                RoundedRectangle(cornerRadius: DS.Radius.bar(height), style: .continuous)
                     .fill(color)
                     .frame(width: proxy.size.width * min(1, max(0, fraction)))
             }
         }
         .frame(height: height)
-    }
-}
-
-/// 分段条：把一个整体按比例切成几段，每段填自己的颜色，段内写“名称 百分比”，
-/// 第一段靠左、最后一段靠右、中间居中；段太窄放不下文字就只画色块，数值由旁边的图例补充
-struct SegmentedBar: View {
-    struct Segment: Identifiable {
-        let id: String
-        let label: String
-        let fraction: Double
-        let color: Color
-        var labelColor: Color = DS.Palette.onPrimary
-    }
-
-    let segments: [Segment]
-    var height: CGFloat = DS.Size.controlHeight
-
-    var body: some View {
-        GeometryReader { proxy in
-            let total = max(segments.reduce(0) { $0 + max(0, $1.fraction) }, 0.000_001)
-            HStack(spacing: 0) {
-                ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
-                    let width = proxy.size.width * max(0, segment.fraction) / total
-                    let percent = Format.percent(segment.fraction / total)
-                    ZStack(alignment: index == 0 ? .leading : index == segments.count - 1 ? .trailing : .center) {
-                        Rectangle().fill(segment.color)
-                        // 放得下就写“名称 百分比”，只放得下数字就只写百分比，再窄就只画色块
-                        ViewThatFits(in: .horizontal) {
-                            Text(verbatim: "\(segment.label) \(percent)")
-                            Text(verbatim: percent)
-                            Color.clear.frame(width: 0, height: 0)
-                        }
-                        .dsFont(.xs, weight: .semibold)
-                        .foregroundStyle(segment.labelColor)
-                        .monospacedDigit()
-                        .lineLimit(1)
-                        .padding(.horizontal, DS.Space.s2)
-                    }
-                    .frame(width: width)
-                    .clipped()
-                }
-            }
-        }
-        .frame(height: height)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
     }
 }
 
@@ -188,7 +156,7 @@ struct TagBadge: View {
         HStack(spacing: DS.Space.s1) {
             if let icon {
                 Image(systemName: icon)
-                    .font(.system(size: DS.TextSize.sm.rawValue, weight: .semibold))
+                    .dsFont(.sm, weight: .semibold)
                     .frame(width: DS.Size.iconInline, height: DS.Size.iconInline)
             }
             Text(text).dsFont(.xs, weight: .semibold)
@@ -327,6 +295,17 @@ enum Tone {
     static func forTemperature(_ celsius: Double) -> Tone {
         celsius >= DS.Thermal.hot ? .error : celsius >= DS.Thermal.warm ? .warning : .primary
     }
+
+    /// 占用类数值（CPU、GPU、单个核心）的颜色：60% 起变黄、85% 起变红；正常时的颜色由场景决定
+    static func forLoad(_ value: Double, normal: Tone) -> Tone {
+        value >= 0.85 ? .error : value >= 0.6 ? .warning : normal
+    }
+
+    /// 温度文字的颜色：正常时用普通文字色，只在偏高变黄、过热变红，颜色只用来提醒（条形图仍用 forTemperature）
+    static func forTemperatureText(_ celsius: Double) -> Tone {
+        let tone = forTemperature(celsius)
+        return tone == .primary ? .neutral : tone
+    }
 }
 
 struct StatusBadge: View {
@@ -434,7 +413,7 @@ struct IconButton: View {
         let glass = DS.Glass.isAvailable && !isInsideGlass
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: DS.TextSize.sm.rawValue, weight: .medium))
+                .dsFont(.sm, weight: .medium)
                 .foregroundStyle(hovering ? DS.Palette.primary : glass ? DS.Palette.textPrimary : DS.Palette.textSecondary)
                 .frame(width: DS.Size.controlHeight, height: DS.Size.controlHeight)
                 .modifier(IconButtonSurface(hovering: hovering, glass: glass))
@@ -496,7 +475,7 @@ struct SidebarButton: View {
         Button(action: action) {
             HStack(spacing: DS.Space.s2) {
                 Image(systemName: symbol)
-                    .font(.system(size: DS.TextSize.sm.rawValue, weight: .medium))
+                    .dsFont(.sm, weight: .medium)
                     .frame(width: DS.Size.iconStandalone)
                 Text(title).dsFont(.sm, weight: isSelected ? .semibold : .regular)
                 Spacer()
@@ -763,7 +742,7 @@ struct SettingRow<Control: View>: View {
         HStack(spacing: DS.Space.s3) {
             if let icon {
                 Image(systemName: icon)
-                    .font(.system(size: DS.TextSize.base.rawValue))
+                    .dsFont(.base)
                     .foregroundStyle(DS.Palette.textSecondary)
                     .frame(width: DS.Size.iconStandalone, height: DS.Size.iconStandalone)
             }
@@ -791,7 +770,7 @@ struct InfoBanner<Action: View>: View {
     var body: some View {
         HStack(alignment: .center, spacing: DS.Space.s3) {
             Image(systemName: icon)
-                .font(.system(size: DS.TextSize.sm.rawValue, weight: .semibold))
+                .dsFont(.sm, weight: .semibold)
                 .foregroundStyle(tone.color)
                 .frame(width: DS.Size.iconInline)
             Text(text)
@@ -911,7 +890,7 @@ struct Chip: View {
     var body: some View {
         HStack(spacing: DS.Space.s1) {
             if let icon {
-                Image(systemName: icon).font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
+                Image(systemName: icon).dsFont(.xs, weight: .semibold)
             }
             Text(verbatim: text).dsFont(.xs, weight: .medium).monospacedDigit()
         }
@@ -1041,7 +1020,7 @@ struct MetricTile<Chart: View, Footer: View>: View {
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s1) {
                 Image(systemName: icon)
-                    .font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
+                    .dsFont(.xs, weight: .semibold)
                     .foregroundStyle(DS.Palette.textSecondary)
                 Text(title)
                     .dsFont(.xs, weight: .semibold)
@@ -1064,10 +1043,53 @@ struct MetricTile<Chart: View, Footer: View>: View {
             chart
                 .frame(height: DS.Size.tileChart)
             footer
-                .font(.system(size: DS.TextSize.xs.rawValue))
+                .dsFont(.xs)
                 .foregroundStyle(DS.Palette.textSecondary)
                 .monospacedDigit()
                 .lineLimit(1)
         }
+    }
+}
+
+// MARK: - 数值与单位
+
+/// 数字按给定字号显示，单位（KB/s、RPM、TB、GB、°C 等）缩小、常规字重、颜色更淡，与圆环里的百分号一致。
+/// 传入格式化好的整串文字，按“数字 / 非数字”自动拆开，例如“1.7 TB”“40.3 GB / 64.0 GB”“52°C”
+struct UnitText: View {
+    let text: String
+    var size: DS.TextSize = .base
+    var color: Color = DS.Palette.textPrimary
+    /// 不给时用数字颜色的淡一些的版本
+    var unitColor: Color?
+    @Environment(\.isCompactText) private var compact
+
+    /// 单位相对数字的大小
+    static let unitScale: CGFloat = 0.62
+
+    var body: some View {
+        let points = size.points(compact: compact)
+        Self.runs(text).reduce(Text(verbatim: "")) { result, run in
+            result + (run.isNumber
+                ? Text(verbatim: run.text).font(.system(size: points)).foregroundStyle(color)
+                : Text(verbatim: run.text).font(.system(size: points * Self.unitScale)).foregroundStyle(unitColor ?? color.opacity(0.6)))
+        }
+        .monospacedDigit()
+        .lineLimit(1)
+    }
+
+    /// 连续的数字（含小数点、千分位逗号、负号、占位的“—”）为一段，其余为单位段。
+    /// 整串没有数字时（“正常”“未使用”）是一个词而不是单位，整串按数字的字号显示
+    static func runs(_ text: String) -> [(text: String, isNumber: Bool)] {
+        guard text.contains(where: \.isNumber) else { return [(text, true)] }
+        var runs: [(text: String, isNumber: Bool)] = []
+        for character in text {
+            let isNumber = character.isNumber || ".,-—".contains(character)
+            if let last = runs.last, last.isNumber == isNumber {
+                runs[runs.count - 1].text.append(character)
+            } else {
+                runs.append((String(character), isNumber))
+            }
+        }
+        return runs
     }
 }

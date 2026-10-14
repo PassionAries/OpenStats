@@ -389,6 +389,17 @@ private func isolatedDefaults() -> UserDefaults {
     }
 }
 
+@Suite struct UnitTextTests {
+    @Test func splitsNumbersFromUnits() {
+        #expect(UnitText.runs("1.7 TB").map(\.text) == ["1.7", " TB"])
+        #expect(UnitText.runs("1,459 RPM").map(\.isNumber) == [true, false])
+        #expect(UnitText.runs("52°C").map(\.text) == ["52", "°C"])
+        #expect(UnitText.runs("40.3 GB / 64.0 GB").map(\.text) == ["40.3", " GB / ", "64.0", " GB"])
+        // 没有数字的词整串按正常字号
+        #expect(UnitText.runs("正常").map(\.isNumber) == [true])
+    }
+}
+
 @Suite struct StableOrderTests {
     @Test func keepsPositionsOfEntriesStillOnTop() {
         // b 超过 a，但两者都还在前三：位置不变，只有掉出去的 c 的位置换成 d

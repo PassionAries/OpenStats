@@ -19,6 +19,14 @@ public final class KeepAwakeController {
             }
         }
 
+        /// 菜单栏面板里的短写
+        var shortTitle: String {
+            switch self {
+            case .display: tr("屏幕常亮")
+            case .system: tr("允许关屏")
+            }
+        }
+
         var subtitle: String {
             switch self {
             case .display: tr("屏幕和系统都不会因闲置而关闭或休眠")
@@ -36,18 +44,24 @@ public final class KeepAwakeController {
     }
 
     public enum Duration: Int, CaseIterable, Identifiable {
-        case minutes15 = 15, hour1 = 60, hours2 = 120, hours5 = 300, unlimited = 0
+        case hour1 = 60, hours2 = 120, hours4 = 240, hours8 = 480, hours12 = 720, unlimited = 0
 
         public var id: Int { rawValue }
 
         var title: String {
             switch self {
-            case .minutes15: tr("15 分钟")
             case .hour1: tr("1 小时")
             case .hours2: tr("2 小时")
-            case .hours5: tr("5 小时")
+            case .hours4: tr("4 小时")
+            case .hours8: tr("8 小时")
+            case .hours12: tr("12 小时")
             case .unlimited: tr("不限")
             }
+        }
+
+        /// 菜单栏面板里的时长格子用的短写
+        var shortTitle: String {
+            self == .unlimited ? "∞" : "\(rawValue / 60)h"
         }
     }
 

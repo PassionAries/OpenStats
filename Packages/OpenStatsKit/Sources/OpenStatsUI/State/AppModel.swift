@@ -120,7 +120,8 @@ public final class AppModel {
         if showing(.battery, .battery) { groups.insert(.battery) }
         if settings.enabledAlerts.contains(.cpuTemperature) { groups.insert(.cpu) }
         demand.temperatures = groups
-        demand.power = (window && tab == .thermal) || thermalPopover || showing(.battery, .battery)
+        // GPU 页要 GPU 功耗与频率（IOReport），同样只在看着时读
+        demand.power = (window && tab == .thermal) || thermalPopover || showing(.battery, .battery) || showing(.gpu, .gpu)
         demand.cpuFrequency = showing(.cpu, .cpu)
         demand.fans = overview || (window && tab == .thermal) || menu.contains(.fan)
             || fans.mode != .automatic || thermalPopover

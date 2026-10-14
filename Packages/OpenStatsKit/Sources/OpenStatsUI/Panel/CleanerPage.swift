@@ -49,7 +49,7 @@ private struct SummaryCard: View {
 
         Card(padding: DS.Space.s3, spacing: DS.Space.s3) {
             HStack(spacing: DS.Space.s1) {
-                Image(systemName: "sparkles").font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
+                Image(systemName: "sparkles").dsFont(.xs, weight: .semibold)
                 Text(tr("磁盘清理")).dsFont(.xs, weight: .semibold)
                 Spacer()
                 if let last = cleaner.lastScan {
@@ -152,7 +152,7 @@ private struct MaintenanceCard: View {
     var body: some View {
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s1) {
-                Image(systemName: "wrench.and.screwdriver").font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
+                Image(systemName: "wrench.and.screwdriver").dsFont(.xs, weight: .semibold)
                 Text(tr("系统维护")).dsFont(.xs, weight: .semibold)
             }
             .foregroundStyle(DS.Palette.textSecondary)
@@ -185,7 +185,7 @@ private struct MaintenanceButton: View {
             VStack(alignment: .leading, spacing: DS.Space.s1 / 2) {
                 HStack(spacing: DS.Space.s2) {
                     Image(systemName: icon)
-                        .font(.system(size: DS.TextSize.sm.rawValue, weight: .medium))
+                        .dsFont(.sm, weight: .medium)
                         .frame(width: DS.Size.iconStandalone)
                     Text(title).dsFont(.sm, weight: .medium)
                     Spacer(minLength: 0)
@@ -267,7 +267,7 @@ private struct RuleRow: View {
                 DSCheckbox(isOn: selected) { cleaner.toggle(scan) }
                     .disabled(!scan.isCleanable || cleaner.isBusy)
                 Image(systemName: scan.rule.symbol)
-                    .font(.system(size: DS.TextSize.sm.rawValue))
+                    .dsFont(.sm)
                     .foregroundStyle(DS.Palette.textSecondary)
                     .frame(width: DS.Size.iconStandalone)
                 VStack(alignment: .leading, spacing: 0) {
@@ -287,7 +287,7 @@ private struct RuleRow: View {
                         .foregroundStyle(DS.Palette.textPrimary)
                     Button { expanded.toggle() } label: {
                         Image(systemName: expanded ? "chevron.up" : "chevron.down")
-                            .font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
+                            .dsFont(.xs, weight: .semibold)
                             .foregroundStyle(DS.Palette.textTertiary)
                             .frame(width: DS.Size.iconStandalone, height: DS.Size.iconStandalone)
                             .contentShape(Rectangle())

@@ -364,32 +364,34 @@ struct HeatLegend: View {
     }
 }
 
-/// 压力走势条：每次采样一段，绿色正常、橙色偏高、红色严重
-struct PressureStrip: View {
-    let history: [MemoryPressure]
-    var capacity = MetricsStore.historyCapacity
+/// 水位条下面的图例：两列，每项是色块、名称与数值；内存水位与磁盘组成共用
+struct WaterlineLegend: View {
+    struct Item: Identifiable {
+        let label: String
+        let value: String
+        let color: Color
+        var help: String?
+
+        var id: String { label }
+    }
+
+    let items: [Item]
 
     var body: some View {
-        Canvas { context, size in
-            let width = size.width / CGFloat(capacity)
-            let offset = capacity - min(capacity, history.count)
-            let recent = history.suffix(capacity)
-            context.clip(to: Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: size.height / 2))
-            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(DS.Palette.track))
-            for (index, pressure) in recent.enumerated() {
-                let color: Color = switch pressure {
-                case .normal: DS.Palette.success
-                case .warning: DS.Palette.warning
-                case .critical: DS.Palette.error
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible())], spacing: DS.Space.s2) {
+            ForEach(items) { item in
+                HStack(spacing: DS.Space.s1) {
+                    RoundedRectangle(cornerRadius: DS.Radius.bar(DS.Size.barHeight), style: .continuous).fill(item.color)
+                        .frame(width: DS.Size.barHeight, height: DS.Size.barHeight)
+                    Text(verbatim: item.label).dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
+                        .lineLimit(1)
+                        .layoutPriority(1)
+                    Spacer(minLength: DS.Space.s1)
+                    UnitText(text: item.value, size: .xs).fixedSize()
                 }
-                // 多画 1pt 盖住相邻段之间的缝
-                let rect = CGRect(x: CGFloat(offset + index) * width, y: 0, width: width + DS.Size.stroke, height: size.height)
-                context.fill(Path(rect), with: .color(color))
+                .help(optional: item.help)
             }
         }
-        .frame(height: DS.Space.s2)
-        .accessibilityElement()
-        .accessibilityLabel(tr("最近的内存压力走势"))
     }
 }
 
@@ -401,7 +403,8 @@ struct WaterlineBar: View {
 
     var body: some View {
         Canvas { context, size in
-            context.clip(to: Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: DS.Radius.sm))
+            context.clip(to: Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: DS.Radius.bar(size.height),
+                                  style: .continuous))
             context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(DS.Palette.track))
             var x: CGFloat = 0
             for segment in segments where segment.value > 0 {

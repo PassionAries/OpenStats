@@ -116,7 +116,6 @@ npm 缓存	npm Cache
 {} 小时	{} h
 {} 小时 {} 分钟	{} h {} min
 {} 核	{} cores
-{} 核图形处理器	{}-core GPU
 {} 正在运行	{} is running
 {} 正在运行，卸载前需要先退出。	{} is running. Quit it before uninstalling.
 {} 测	at {}
@@ -220,7 +219,6 @@ npm 缓存	npm Cache
 低风险	Low risk
 住宅 IP	Residential IP
 住宅代理	Residential proxy
-余量 {}	Headroom {}
 使用 {} 登录	Sign in with {}
 使用云端设置	Use cloud settings
 使用历史	Usage History
@@ -331,7 +329,6 @@ npm 缓存	npm Cache
 历史记录已关闭，下面是关闭前记录的数据。	History recording is off. Below is data recorded before it was turned off.
 压力 {}	Pressure {}
 压力{}	{}
-压力走势	Pressure Trend
 压缩	Compressed
 压缩与交换	Compression & Swap
 压缩为你省下	Saved by compression
@@ -425,7 +422,6 @@ npm 缓存	npm Cache
 国内网络建议选阿里云或腾讯；选路由器只检测本地连接	In mainland China, Alibaba Cloud or Tencent work best; Router only checks the local link
 国内节点只能测 TCP 建连，经代理测不准，所以始终直连测	China nodes only allow TCP connect timing, which a proxy distorts, so they're always tested directly
 图形	Graphics
-图形处理器	GPU
 图形核心	GPU cores
 图标	Icon
 圆环	Ring
@@ -692,7 +688,6 @@ npm 缓存	npm Cache
 最近 24 小时	Last 24 hours
 最近 60 秒	Last 60 seconds
 最近没有应用在读写磁盘	No apps are reading or writing right now
-最近的内存压力走势	Recent memory pressure
 最近错误	Last error
 最高	Max
 最高 / 平均	Max / Avg
@@ -750,7 +745,6 @@ npm 缓存	npm Cache
 核心 {}（{}）· {}	Core {} ({}) · {}
 核心分工	Core Types
 核心数	Cores
-核心最高温度；余量是离 100°C 还差多少度，越接近 0 越可能因过热降频	Hottest core; headroom is how many degrees remain before 100°C — the closer to 0, the more likely thermal throttling
 核心热力图	Core Heatmap
 核心负载	Core Load
 检查	Check
@@ -804,7 +798,6 @@ npm 缓存	npm Cache
 正常	Normal
 此刻各核心的占用；超过 60% 变橙色、85% 变红色	Current load of each core; orange above 60%, red above 85%
 此设备没有可调节的风扇	This Mac has no adjustable fans
-每个应用占整机 CPU 的比例：{} 个核心全部跑满为 100%，与顶部的总占用是同一把尺子。鼠标悬停在数值上可以看按单核计的占用（活动监视器的算法）	Each app's share of total CPU: all {} cores fully busy is 100%, the same scale as the total above. Hover a value to see it per core (the Activity Monitor way)
 每个指标一个图标，点击弹出该项详情	One icon per metric; click for its details
 每分钟把主要指标的平均值与峰值写入本机数据库，保留 7 天，不上传	Writes averages and peaks of key metrics to a local database every minute. Kept for 7 days, never uploaded.
 每核 {}	{} per core
@@ -887,7 +880,6 @@ npm 缓存	npm Cache
 电池放电	Battery discharging
 电池最大容量为 {}，续航会明显缩短。可以在“系统设置 › 电池”查看是否建议维修。	Battery maximum capacity is {}, so battery life will be noticeably shorter. Check System Settings › Battery for service recommendations.
 电池最大容量低于 80%，每 30 天最多提醒一次	Battery maximum capacity drops below 80%; at most once every 30 days
-电池温度	Battery temperature
 电池电量	Battery level
 电池设置	Battery Settings
 电源	Power
@@ -1078,7 +1070,6 @@ npm 缓存	npm Cache
 辅助工具版本比应用旧，部分功能可能无法使用，请重新安装一次（需要管理员授权）。	The helper is older than the app and some features may not work. Reinstall it (admin approval required).
 过热温度	Overheat Threshold
 运行中 · PID {}	Running · PID {}
-还可用	Available
 还有 {} 个	{} more
 还没有足够的记录。菜单栏显示电池或打开这个页面时，每分钟记录一次电量	Not enough records yet. The level is recorded every minute while Battery is in the menu bar or this page is open
 还能用 {}	{} left
@@ -1168,10 +1159,75 @@ npm 缓存	npm Cache
 （{}）	 ({})
 ，	, 
 ，{} 项未能移动	, {} couldn't be moved
+{} 分	{} pts
+用户数据	User Data
+启动与恢复	Boot & Recovery
+虚拟内存	Virtual Memory
+已写入	Written
+应用、文稿、照片与各种用户资料	Apps, documents, photos and other user data
+只读的 macOS 系统卷	The read-only macOS system volume
+启动、恢复、更新等系统辅助卷与快照	Boot, recovery and update volumes plus snapshots
+交换文件与睡眠镜像	Swap files and the sleep image
+系统随时可以腾出的缓存	Cache the system can free at any time
+真正空着的空间，不含可清除的缓存	Truly empty space, not counting purgeable cache
+这块 SSD 出厂以来累计写入的数据量	Total data written to this SSD since it was made
+CPU 占用	CPU Usage
+GPU 占用	GPU Usage
+内存占用	Memory Usage
+磁盘占用	Disk Usage
+GPU 工作时的平均频率	Average GPU frequency while active
+macOS 报告的热状态：偏高及以上时，系统会降低性能来降温	Thermal state reported by macOS. At Elevated or above, the system lowers performance to cool down
+热状态	Thermal State
+热状态 {}	Thermal state {}
+危急	Critical
+未知	Unknown
+丢包	Packet Loss
+交换	Swap
+休眠	Idle
+健康	Health
+压力	Pressure
+频率	Frequency
+耗电	Drain
+电压	Voltage
+充电电流	Charge Current
+电流	Current
+放电电流	Discharge Current
+满充 / 设计容量	Full Charge / Design Capacity
+电池此刻的电流；接着电源时也可能短暂由电池补电	Battery current right now. Even on power, the battery may briefly help supply power
+其他进程暂时没有流量	No other processes are using the network
+内存压力由 macOS 判断：变黄或变红说明内存不够用，系统开始压缩或写入磁盘	Memory pressure is judged by macOS. Yellow or red means memory is short and the system is compressing or swapping to disk
+写到磁盘上的内存。长期使用较多说明内存不够用，会拖慢速度	Memory written to disk. Heavy use over time means memory is short and slows the Mac down
+到探测目标的往返时间	Round-trip time to the probe target
+最近 {} 次探测里没有回应的比例	Share of the last {} probes with no reply
+单核	Per Core
+占整机：{}	Of total: {}
+占整机 CPU 的比例：{} 个核心全部跑满为 100%，可在 CPU 详情里切换	Share of total CPU: all {} cores at full load is 100%. Switch in CPU details
+按单核满载为 100% 计（活动监视器的算法），可在 CPU 详情里切换	One fully loaded core is 100% (Activity Monitor). Switch in CPU details
+应用占用的计算口径：整机或单核（活动监视器）	How app usage is measured: whole machine or per core (Activity Monitor)
+整机：{} 个核心全部跑满为 100%，与顶部的总占用是同一把尺子。单核：一个核心跑满为 100%，与活动监视器一致，多线程应用可以超过 100%	Total: all {} cores at full load is 100%, the same scale as the usage above. Per core: one fully loaded core is 100%, like Activity Monitor, so multithreaded apps can exceed 100%
+占用内存	Memory in Use
+渲染	Renderer
+拼接	Tiler
+渲染是着色与像素处理，拼接是几何与图块划分；GPU 与 CPU 共用统一内存	The renderer handles shading and pixels; the tiler handles geometry and tiling. The GPU shares unified memory with the CPU
+各核心里的最高温度	Hottest core temperature
+已用 {} / 共 {}	{} used of {}
+用量走势	Usage Trend
+最近十几秒平均	Recent average
+只含当前用户的进程；数字与条形都是最近十几秒的平均速率	Current user's processes only. Numbers and bars are averages over the last several seconds
+4 小时	4 hours
+8 小时	8 hours
+12 小时	12 hours
+屏幕常亮	Screen On
+允许关屏	Screen Can Sleep
+{} 结束	Ends at {}
+一直保持，直到手动关闭	Stays on until you turn it off
+电池健康 {}：图标里的电量格子代表健康度	Battery health {}: the bars in the icon show health
+风扇档位	Fan Mode
+已用 {}	{} used
 项目间距	Item Spacing
+合并显示时菜单栏里各项之间的距离，数值越小越紧凑	Spacing between items in the combined menu bar icon; smaller is more compact
 开启防休眠	Turn On Keep Awake
 关闭防休眠	Turn Off Keep Awake
-合并显示时菜单栏里各项之间的距离，数值越小越紧凑	Spacing between items in the combined menu bar icon; smaller is more compact
 ，充电中	, charging
 ，已从程序坞移除	, removed from the Dock
 ：{}	: {}

@@ -14,11 +14,7 @@ struct NetworkPopover: View {
         let rate = store.network
 
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
-            HStack(spacing: DS.Space.s3) {
-                RateHero(title: tr("下载"), bytesPerSecond: rate?.downloadBytesPerSecond, color: DS.NetworkPalette.download)
-                Rectangle().fill(DS.Palette.border).frame(width: DS.Size.stroke, height: DS.Space.s8)
-                RateHero(title: tr("上传"), bytesPerSecond: rate?.uploadBytesPerSecond, color: DS.NetworkPalette.upload)
-            }
+            NetworkHero(rate: rate)
         }
 
         ForEach(MenuBarItem.network.popoverSections.filter { isDetailPage || settings.isVisible($0) }) { section in
@@ -36,21 +32,39 @@ struct NetworkPopover: View {
     }
 }
 
-private struct RateHero: View {
-    let title: String
-    let bytesPerSecond: Double?
-    let color: NSColor
+/// 网络顶部：下载速度与连接摘要（接口、网络名称、本机地址），右侧是上传、延迟与丢包。
+/// 延迟和丢包取自后台的连接探测（最近 60 次），关掉探测时不显示
+private struct NetworkHero: View {
+    let rate: NetworkRate?
+    @Environment(AppModel.self) private var model
 
     var body: some View {
-        let parts = (bytesPerSecond.map { Format.menuBarRate($0) } ?? "— KB/s").split(separator: " ", maxSplits: 1).map(String.init)
-        VStack(alignment: .leading, spacing: DS.Space.s1) {
-            HeroValue(value: parts.first ?? "—", unit: parts.count > 1 ? parts[1] : nil)
-            HStack(spacing: DS.Space.s1) {
-                Circle().fill(Color(nsColor: color)).frame(width: DS.Size.barHeight, height: DS.Size.barHeight)
-                Text(title).dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        let network = model.network
+        let probes = network.probes.elements
+        let probing = model.settings.probeEnabled && !probes.isEmpty
+        let latency = probes.last?.latency
+        let loss = probes.isEmpty ? 0 : Double(probes.filter { $0.latency == nil }.count) / Double(probes.count)
+
+        PopoverHero(label: "↓ " + tr("下载"), value: rate.map { Format.menuBarRate($0.downloadBytesPerSecond) } ?? "—",
+                    caption: connectionSummary(network.details),
+                    stats: [
+                        HeroStat(label: "↑ " + tr("上传"), value: rate.map { Format.menuBarRate($0.uploadBytesPerSecond) } ?? "—"),
+                        probing ? HeroStat(label: tr("延迟"), value: latency.map { "\(Int($0.rounded())) ms" } ?? tr("超时"),
+                                           tone: latency.map { $0 >= 300 ? .error : $0 >= 100 ? .warning : .neutral } ?? .error,
+                                           help: tr("到探测目标的往返时间")) : nil,
+                        probing ? HeroStat(label: tr("丢包"), value: Format.percent(loss),
+                                           tone: loss >= 0.05 ? .error : loss > 0 ? .warning : .neutral,
+                                           help: tr("最近 \(probes.count) 次探测里没有回应的比例")) : nil,
+                    ].compactMap { $0 })
+    }
+
+    /// “Wi-Fi「家里」· 192.168.1.5”；有 VPN 时在后面注明
+    private func connectionSummary(_ details: NetworkDetails?) -> String {
+        guard let physical = details?.physical else { return details == nil ? tr("正在读取…") : tr("未连接网络") }
+        var parts = [physical.wifi?.ssid.map { "\(physical.displayName)「\($0)」" } ?? physical.displayName]
+        if let address = physical.ipv4.first { parts.append(address) }
+        if details?.tunnel != nil { parts.append("VPN") }
+        return parts.joined(separator: " · ")
     }
 }
 
@@ -68,9 +82,10 @@ private struct TrafficHistorySection: View {
         // 峰值放在标题行，图表上不压任何文字
         SectionCard(title: PopoverSection.networkHistory.title, trailing: {
             HStack(spacing: DS.Space.s1) {
+                // 与顶部一致：先下载、后上传
                 Text(tr("60 秒峰值"))
-                peak("↑", upload, color: DS.NetworkPalette.upload)
                 peak("↓", download, color: DS.NetworkPalette.download)
+                peak("↑", upload, color: DS.NetworkPalette.upload)
             }
             .monospacedDigit()
         }) {
@@ -502,7 +517,7 @@ private struct DNSSection: View {
         // 走代理隧道时标题旁放一个叹号，悬停才显示说明；刷新缓存是图标按钮，放在标题行右侧
         let tunnelWarning = network.details?.tunnel.map { tunnel in
             AnyView(Image(systemName: "exclamationmark.circle")
-                .font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
+                .dsFont(.xs, weight: .semibold)
                 .foregroundStyle(DS.Palette.warning)
                 .help(tr("流量经过 \(tunnel.name)，系统 DNS 可能由它接管，修改后不一定生效。"))
                 .accessibilityLabel(tr("流量经过 \(tunnel.name)，系统 DNS 可能由它接管，修改后不一定生效。")))
@@ -628,7 +643,8 @@ private struct NetworkProcessesSection: View {
                 Text(tr("上传")).frame(width: DS.Size.valueColumn, alignment: .trailing)
             }
         }) {
-            ProcessList(count: processes.count, rowCount: 5, emptyText: tr("正在统计各进程流量…")) { index in
+            ProcessList(count: processes.count, rowCount: 5, emptyText: tr("正在统计各进程流量…"),
+                        restText: tr("其他进程暂时没有流量")) { index in
                 let process = processes[index]
                 HStack(spacing: 0) {
                     ProcessNameLabel(icon: AppIconCache.shared.image(bundlePath: process.appBundlePath), name: process.localizedName)

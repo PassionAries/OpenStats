@@ -31,9 +31,9 @@ struct SystemInfoPage: View {
                             .foregroundStyle(DS.Palette.textSecondary)
                         FlowLayout(spacing: DS.Space.s2) {
                             Chip(text: chipName(topology.brand), icon: "apple.logo")
-                            Chip(text: Format.bytes(ProcessInfo.processInfo.physicalMemory).replacingOccurrences(of: ".0 ", with: " "))
+                            Chip(text: Format.capacity(ProcessInfo.processInfo.physicalMemory))
                             if let disk = store.disk {
-                                Chip(text: Format.bytes(disk.total, base: .decimal).replacingOccurrences(of: ".0 ", with: " "))
+                                Chip(text: Format.capacity(disk.total, base: .decimal))
                             }
                             if let boot = system.bootDate {
                                 Chip(text: tr("已运行 ") + Format.uptime(since: boot))
@@ -112,7 +112,7 @@ struct SystemInfoPage: View {
                     if index > 0 { HairlineDivider() }
                     HStack(spacing: DS.Space.s3) {
                         Image(systemName: display.isBuiltIn ? "laptopcomputer" : "display")
-                            .font(.system(size: DS.TextSize.base.rawValue))
+                            .dsFont(.base)
                             .foregroundStyle(DS.Palette.textSecondary)
                             .frame(width: DS.Size.iconStandalone)
                         VStack(alignment: .leading, spacing: 0) {
@@ -176,7 +176,7 @@ private struct InfoCard<Content: View>: View {
     var body: some View {
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s1) {
-                Image(systemName: icon).font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
+                Image(systemName: icon).dsFont(.xs, weight: .semibold)
                 Text(title).dsFont(.xs, weight: .semibold)
             }
             .foregroundStyle(DS.Palette.textSecondary)

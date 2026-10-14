@@ -80,7 +80,7 @@ private struct AppListColumn: View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s2) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
+                    .dsFont(.xs, weight: .semibold)
                     .foregroundStyle(DS.Palette.textTertiary)
                 TextField(tr("搜索应用"), text: $search)
                     .textFieldStyle(.plain)
@@ -266,7 +266,7 @@ private struct DropHint: View {
     var body: some View {
         VStack(spacing: DS.Space.s3) {
             Image(systemName: "arrow.down.app")
-                .font(.system(size: DS.TextSize.xxl.rawValue))
+                .dsFont(.xxl)
                 .foregroundStyle(isTargeted ? DS.Palette.primary : DS.Palette.textTertiary)
             Text(tr("从左侧选择应用，或把应用拖到这里"))
                 .dsFont(.sm, weight: .medium)
