@@ -30,7 +30,7 @@ public final class AppModel {
     public let history: HistoryRecorder
     public let sync: SyncController
     let diskTools: DiskToolsController
-    @ObservationIgnored public let hub = MetricsHub()
+    @ObservationIgnored public let hub: MetricsHub
 
     public var isMainWindowVisible = false
     /// 被其他应用占用、没能注册的快捷键
@@ -65,10 +65,12 @@ public final class AppModel {
     public init(settings: AppSettings = AppSettings(), historyURL: URL? = HistoryDatabase.defaultURL) {
         let store = MetricsStore()
         let helper = HelperClient()
+        let hub = MetricsHub()
+        self.hub = hub
         self.settings = settings
         self.store = store
         self.helper = helper
-        fans = FanController(helper: helper, store: store, settings: settings)
+        fans = FanController(helper: helper, store: store, settings: settings, hub: hub)
         keepAwake = KeepAwakeController(helper: helper, settings: settings)
         let cleanupTally = CleanupTally()
         self.cleanupTally = cleanupTally

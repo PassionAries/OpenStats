@@ -35,11 +35,18 @@ public final class FanController {
     @ObservationIgnored private let helper: HelperClient
     @ObservationIgnored private let store: MetricsStore
     @ObservationIgnored private let settings: AppSettings
+    @ObservationIgnored private let hub: MetricsHub
+    @ObservationIgnored private var spinUpWatch: Task<Void, Never>?
 
-    init(helper: HelperClient, store: MetricsStore, settings: AppSettings) {
+    /// 切换档位后跟踪风扇起步的采样间隔与最长时间
+    static let spinUpPollInterval: Duration = .milliseconds(250)
+    static let spinUpWatchLimit: Duration = .seconds(10)
+
+    init(helper: HelperClient, store: MetricsStore, settings: AppSettings, hub: MetricsHub) {
         self.helper = helper
         self.store = store
         self.settings = settings
+        self.hub = hub
     }
 
     func select(_ newMode: Mode) async {
@@ -93,7 +100,9 @@ public final class FanController {
         defer { isApplying = false }
 
         if mode == .automatic {
-            return await helper.resetAllFans()
+            let error = await helper.resetAllFans()
+            if error == nil { watchSpinUp() }
+            return error
         }
         for fan in fans {
             if let error = await helper.setFanTarget(fan: fan.id, rpm: targetRPM(for: fan)) {
@@ -101,7 +110,32 @@ public final class FanController {
                 return error
             }
         }
+        watchSpinUp()
         return nil
+    }
+
+    /// 指令是立刻生效的，但风扇从停转起步要几秒，常规采样又是 1～2 秒一次，界面看起来像没反应。
+    /// 下发后每 250 毫秒单独读一次风扇，直到转速接近目标或超时，让“启动中…”和转速变化马上显示出来
+    private func watchSpinUp() {
+        spinUpWatch?.cancel()
+        spinUpWatch = Task { [weak self] in
+            let clock = ContinuousClock()
+            let deadline = clock.now.advanced(by: Self.spinUpWatchLimit)
+            while !Task.isCancelled, clock.now < deadline {
+                guard let self else { return }
+                let fans = await hub.sampleFans()
+                guard !Task.isCancelled else { return }
+                store.updateFans(fans)
+                if !fans.isEmpty, fans.allSatisfy(isSettled) { return }
+                try? await Task.sleep(for: Self.spinUpPollInterval)
+            }
+        }
+    }
+
+    /// 已转起来且与目标相差不到 5%（至少 100 转）
+    private func isSettled(_ fan: FanState) -> Bool {
+        let target = mode == .automatic ? fan.target : targetRPM(for: fan)
+        return !fan.isStarting && abs(fan.current - target) <= max(100, target * 0.05)
     }
 
     private func show(_ message: String, isError: Bool) {

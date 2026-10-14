@@ -115,6 +115,12 @@ public final class MetricsStore {
         if let sensors = snapshot.sensors { mergeSensors(sensors) }
     }
 
+    /// 切换风扇档位后单独刷新的风扇读数，温度保持不变
+    func updateFans(_ fans: [FanState]) {
+        guard !fans.isEmpty else { return }
+        mergeSensors(SensorReadings(temperatures: [], fans: fans))
+    }
+
     /// 不同页面采集的温度分组不同，按组合并，避免切页时数据闪烁
     private func mergeSensors(_ new: SensorReadings) {
         guard let old = sensors else {

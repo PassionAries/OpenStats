@@ -80,6 +80,11 @@ public actor MetricsHub {
         restart()
     }
 
+    /// 只读一次风扇状态：切换档位后跟踪风扇起步，不打断常规采样
+    public func sampleFans() -> [FanState] {
+        sensors.sample(groups: [], includeFans: true)?.fans ?? []
+    }
+
     public func stop() {
         loop?.cancel()
         loop = nil

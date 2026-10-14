@@ -121,14 +121,19 @@ public final class FanControl {
         // M5 及以后：直接写模式键即可
         if (try? smc.write(modeKey(id), value: 1)) != nil { return }
 
-        // M1–M4：先写 Ftst=1，等待 thermalmonitord 让出控制权
+        // M1–M4：先写 Ftst=1，等待 thermalmonitord 让出控制权。
+        // 不固定等 3 秒：每 50 毫秒试写一次模式键并读回确认，控制权一交出来就继续，最多等 15 秒
         let ftst = SMCKey("Ftst")
         guard smc.exists(ftst) else { throw SMCError.firmwareRejected(modeKey(id), 0) }
         if smc.double(ftst) != 1 {
             try writeWithRetry(ftst, value: 1, attempts: 100)
-            Thread.sleep(forTimeInterval: 3)
         }
-        try writeWithRetry(modeKey(id), value: 1, attempts: 300, delay: 0.1)
+        let key = modeKey(id)
+        for _ in 0..<300 {
+            if (try? smc.write(key, value: 1)) != nil, smc.double(key) == 1 { return }
+            Thread.sleep(forTimeInterval: 0.05)
+        }
+        throw SMCError.firmwareRejected(key, 0)
     }
 
     private func writeWithRetry(_ key: SMCKey, value: Double, attempts: Int = 10, delay: TimeInterval = 0.05) throws {
