@@ -4,362 +4,331 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>OpenStats — Mac 的状态，抬眼就看见</title>
-<meta name="description" content="OpenStats 把 CPU、GPU、内存、网络与温度放进 macOS 菜单栏，还能调风扇、防休眠、一键清理。数据在本机读取，没有统计上报。">
-<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="description" content="OpenStats 把 CPU、GPU、内存、网络与温度放进 macOS 菜单栏，点开就是一张完整的面板；还能调风扇、防休眠、一键清理。数据在本机读取，没有统计上报。">
+<meta name="theme-color" content="#1b2a5c" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0b0b0d" media="(prefers-color-scheme: dark)">
 <link rel="canonical" href="https://getopenstats.com/">
 <meta property="og:title" content="OpenStats — Mac 的状态，抬眼就看见">
-<meta property="og:description" content="CPU、GPU、内存、网络与温度常驻菜单栏，还能调风扇、防休眠、一键清理。">
+<meta property="og:description" content="CPU、GPU、内存、网络与温度常驻菜单栏，点开就是一张完整的面板；还能调风扇、防休眠、一键清理。">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://getopenstats.com/">
 <meta property="og:site_name" content="OpenStats">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://getopenstats.com/assets/window-light.png">
-<link rel="icon" href="assets/favicon.ico?v=871fa442" sizes="48x48">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=871fa442">
-<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=871fa442">
+<link rel="icon" href="assets/favicon.ico?v=6dea6608" sizes="48x48">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=6dea6608">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=6dea6608">
 <script>
-  // 在样式生效前确定主题，避免深色模式下先闪一下白底
+  // 在样式生效前确定主题，避免深色模式下先闪一下另一张壁纸
   try {
     const saved = localStorage.getItem("os-theme");
     document.documentElement.dataset.theme = saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
   } catch { document.documentElement.dataset.theme = "light"; }
 </script>
-<link rel="stylesheet" href="styles.css?v=871fa442">
-<link rel="stylesheet" href="replica.css?v=871fa442">
+<link rel="stylesheet" href="styles.css?v=6dea6608">
+<link rel="stylesheet" href="replica.css?v=6dea6608">
 </head>
 <body>
 
 <!-- ── 首屏：整屏就是一台 Mac ───────────────────────────────────────
-     菜单栏同时是全站导航；右侧的 OpenStats 读数、点开的详情弹窗与主窗口都是 HTML 重建，
-     数据由 replica.js 模拟。往下滚才是普通的介绍页。 -->
+     菜单栏同时是全站导航；右上角的 OpenStats 读数与它下面吊着的面板、桌面小组件
+     都是 HTML 重建，数据由 replica.js 在本页模拟，不读取访客电脑的任何信息。
+     往下滚才是普通的介绍页。 -->
 <header class="desktop" id="top">
-  <div class="desktop__wall" aria-hidden="true"></div>
+  <div class="desktop__wall" aria-hidden="true">
+    <svg class="desktop__hills" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="hillA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="hill-a0"/><stop offset="1" class="hill-a1"/></linearGradient>
+        <linearGradient id="hillB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="hill-b0"/><stop offset="1" class="hill-b1"/></linearGradient>
+        <linearGradient id="hillC" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="hill-c0"/><stop offset="1" class="hill-c1"/></linearGradient>
+      </defs>
+      <path fill="url(#hillA)" d="M0 560C180 500 300 470 470 500S760 610 940 560 1260 420 1440 470V900H0Z"/>
+      <path fill="url(#hillB)" d="M0 660C160 610 330 600 520 650S860 760 1060 690 1320 600 1440 630V900H0Z"/>
+      <path fill="url(#hillC)" d="M0 770C220 730 420 740 620 780S1000 850 1200 800 1380 760 1440 770V900H0Z"/>
+    </svg>
+  </div>
 
+  <!-- 这一条既是桌面的菜单栏，也是本站唯一的导航 -->
   <nav class="menubar" aria-label="站点导航">
     <svg class="menubar__apple" viewBox="0 0 14 17" fill="currentColor" aria-hidden="true">
       <path d="M11.5 9c0-1.9 1.5-2.8 1.6-2.9-.9-1.3-2.2-1.5-2.7-1.5-1.1-.1-2.2.7-2.8.7-.6 0-1.5-.7-2.4-.6-1.2 0-2.4.7-3 1.8-1.3 2.2-.3 5.4 1 7.2.6.8 1.3 1.8 2.2 1.7.9 0 1.2-.6 2.2-.6 1 0 1.3.6 2.2.5.9 0 1.5-.8 2.1-1.7.7-1 .9-1.9.9-1.9s-1.8-.7-1.8-2.7zM9.7 3.2c.5-.6.8-1.4.7-2.2-.7 0-1.6.5-2.1 1.1-.5.6-.9 1.4-.8 2.2.8.1 1.7-.4 2.2-1.1z"/>
     </svg>
-
     <div class="mb-menu">
       <a class="mb-title mb-title--app" href="#top" aria-haspopup="menu" aria-expanded="false">OpenStats</a>
       <div class="mb-drop" role="menu">
-        <a role="menuitem" href="#features">关于 OpenStats</a>
-        <a role="menuitem" href="#download">下载 for Mac…</a>
+        <a role="menuitem" href="#top">关于 OpenStats</a>
+        <a role="menuitem" href="#privacy">隐私说明</a>
+        <hr>
+        <a role="menuitem" href="download/OpenStats-0.7.0-AppleSilicon.dmg" download>下载 Apple 芯片版</a>
+        <a role="menuitem" href="download/OpenStats-0.7.0-Intel.dmg" download>下载 Intel 版</a>
+        <a role="menuitem" href="#install">用 Homebrew 安装</a>
+        <hr>
+        <a role="menuitem" href="https://github.com/gentpan/OpenStats">查看源码<span class="mb-drop__ext" aria-hidden="true">↗</span></a>
       </div>
     </div>
     <div class="mb-menu">
       <a class="mb-title" href="#features" aria-haspopup="menu" aria-expanded="false">功能</a>
       <div class="mb-drop" role="menu">
-        <a role="menuitem" href="#styles">菜单栏风格</a>
-        <a role="menuitem" href="#network">网络详情与 DNS</a>
-        <a role="menuitem" href="#themes">主窗口与主题</a>
+        <a role="menuitem" href="#features">功能一览</a>
+        <a role="menuitem" href="#cards">点开每一项</a>
         <a role="menuitem" href="#thermal">风扇与防休眠</a>
-        <a role="menuitem" href="#cleanup">清理与维护</a>
+        <a role="menuitem" href="#network">网络与 IP 纯净度</a>
+        <a role="menuitem" href="#cleanup">清理与卸载</a>
       </div>
     </div>
     <div class="mb-menu">
-      <a class="mb-title" href="#privacy" aria-haspopup="menu" aria-expanded="false">隐私</a>
-      <div class="mb-drop" role="menu">
-        <a role="menuitem" href="#privacy">数据留在本机</a>
-        <a role="menuitem" href="#faq">辅助工具做什么</a>
+      <a class="mb-title" href="#styles" aria-haspopup="menu" aria-expanded="false">菜单栏风格</a>
+      <div class="mb-drop mb-drop--styles" role="menu" id="styleMenu">
+        <p class="mb-drop__label">菜单栏读数的样式</p>
+        <!-- 由 replica.js 填入八种风格 -->
       </div>
     </div>
     <div class="mb-menu">
       <a class="mb-title" href="#changelog" aria-haspopup="menu" aria-expanded="false">更新日志</a>
       <div class="mb-drop" role="menu">
         <a role="menuitem" href="#changelog">最近更新</a>
+        <hr>
+        <a role="menuitem" href="https://github.com/gentpan/OpenStats/releases">GitHub Releases<span class="mb-drop__ext" aria-hidden="true">↗</span></a>
       </div>
     </div>
     <div class="mb-menu">
       <a class="mb-title" href="#faq" aria-haspopup="menu" aria-expanded="false">帮助</a>
       <div class="mb-drop" role="menu">
         <a role="menuitem" href="#faq">常见问题</a>
-        <a role="menuitem" href="#install">安装与卸载</a>
+        <hr>
+        <a role="menuitem" href="https://github.com/gentpan/OpenStats/issues">问题与建议<span class="mb-drop__ext" aria-hidden="true">↗</span></a>
       </div>
     </div>
 
     <div class="menubar__right">
-      <!-- OpenStats 的菜单栏图标：每个指标一个，内容由 replica.js 按当前风格绘制 -->
-      <div class="mb-items" id="mbItems"></div>
-      <svg class="menubar__extra" width="19" height="11" viewBox="0 0 19 11" fill="none" stroke="currentColor" stroke-width="1.1" aria-hidden="true">
-        <rect x="0.6" y="0.6" width="14" height="9.8" rx="2.6"/><rect x="2.2" y="2.2" width="9" height="6.6" rx="1.4" fill="currentColor" stroke="none"/><path d="M16.4 4v3" stroke-linecap="round"/>
+      <!-- 状态栏里的 OpenStats：合并显示的读数，点开就是下面的面板 -->
+      <button class="mb-stats" id="mbStats" type="button" aria-haspopup="dialog" aria-expanded="true" aria-controls="heroPanel" aria-label="OpenStats 菜单栏读数，点开面板"></button>
+      <svg class="menubar__sys" width="24" height="12" viewBox="0 0 24 12" fill="none" aria-hidden="true">
+        <rect x=".6" y=".6" width="20.5" height="10.8" rx="3" stroke="currentColor" stroke-opacity=".45" stroke-width="1.2"/>
+        <rect x="2.4" y="2.4" width="16.9" height="7.2" rx="1.6" fill="currentColor"/>
+        <path d="M22.4 4.2v3.6c.8-.2 1.2-1 1.2-1.8s-.4-1.6-1.2-1.8z" fill="currentColor" fill-opacity=".45"/>
       </svg>
-      <svg class="menubar__extra" width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
-        <path d="M1 4a9 9 0 0 1 13 0M3.5 6.5a5.5 5.5 0 0 1 8 0"/><circle cx="7.5" cy="9.4" r="1" fill="currentColor" stroke="none"/>
+      <svg class="menubar__sys" width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+        <path d="M8.5 2.3c2.4 0 4.6.9 6.3 2.5l1.1-1.1A10.4 10.4 0 0 0 8.5.7 10.4 10.4 0 0 0 1.1 3.7l1.1 1.1A9 9 0 0 1 8.5 2.3zm0 3.2c1.5 0 2.9.6 4 1.6l1.1-1.1a7.3 7.3 0 0 0-10.2 0l1.1 1.1c1.1-1 2.5-1.6 4-1.6zm0 3.2c.7 0 1.3.3 1.8.7L8.5 11.2 6.7 9.4c.5-.4 1.1-.7 1.8-.7z"/>
       </svg>
-      <button class="mb-icon" id="themeToggle" type="button" aria-label="切换浅色 / 深色">
-        <svg class="mb-icon__moon" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M12 8.6A5.4 5.4 0 1 1 5.4 2a4.2 4.2 0 0 0 6.6 6.6z"/></svg>
-        <svg class="mb-icon__sun" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="2.6"/><path d="M7 .8v1.4M7 11.8v1.4M.8 7h1.4M11.8 7h1.4M2.6 2.6l1 1M10.4 10.4l1 1M11.4 2.6l-1 1M3.6 10.4l-1 1"/></svg>
+      <button class="menubar__theme" id="themeToggle" type="button" aria-label="切换浅色 / 深色">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M13.5 9.8A6 6 0 1 1 6.2 2.5a4.8 4.8 0 0 0 7.3 7.3z"/></svg>
       </button>
       <time class="menubar__clock" id="menubarClock"></time>
     </div>
   </nav>
 
-  <!-- 刘海岛：收起时是刘海，悬停或点击展开实时摘要 -->
-  <button class="island" id="island" type="button" aria-expanded="false" aria-label="展开 OpenStats 刘海岛">
-    <span class="island__compact">
-      <span class="island__dot"></span>
-      <span class="island__mini" data-bind="island-cpu">CPU 24%</span>
-    </span>
-    <span class="island__expanded" aria-hidden="true">
-      <span class="island__row">
-        <span class="island__brand"><img src="assets/icon.png?v=871fa442" alt="" width="18" height="18">OpenStats</span>
-        <span class="island__health" data-bind="island-health">各项指标正常</span>
-      </span>
-      <span class="island__grid">
-        <span class="island__tile"><span class="island__label">CPU</span><span class="island__value" data-bind="island-cpu-value">24%</span><span class="island__bar"><i data-bind="island-cpu-bar"></i></span></span>
-        <span class="island__tile"><span class="island__label">GPU</span><span class="island__value" data-bind="island-gpu-value">12%</span><span class="island__bar"><i data-bind="island-gpu-bar"></i></span></span>
-        <span class="island__tile"><span class="island__label">内存</span><span class="island__value" data-bind="island-mem-value">68%</span><span class="island__bar"><i data-bind="island-mem-bar"></i></span></span>
-        <span class="island__tile"><span class="island__label">温度</span><span class="island__value" data-bind="island-temp-value">52°</span><span class="island__bar"><i data-bind="island-temp-bar"></i></span></span>
-      </span>
-      <span class="island__foot">
-        <span><i class="dot dot--up"></i><b data-bind="island-up">12 KB/s</b></span>
-        <span><i class="dot dot--down"></i><b data-bind="island-down">1.4 MB/s</b></span>
-        <span data-bind="island-fan">风扇 1,840 RPM</span>
-      </span>
-    </span>
-  </button>
+  <!-- 菜单栏下方吊着的 OpenStats 面板（合并显示的总览与各项详情） -->
+  <div class="os-panel os-panel--hero" id="heroPanel" role="dialog" aria-label="OpenStats 面板" data-panel="hero"></div>
 
-  <!-- 左侧桌面图标 -->
-  <nav class="desk-icons" aria-label="快捷入口">
-    <a class="desk-icon" href="#download">
-      <span class="desk-icon__art desk-icon__art--dmg" aria-hidden="true"><img src="assets/icon.png?v=871fa442" alt="" width="40" height="40"></span>
-      <span class="desk-icon__name">OpenStats.dmg</span>
-    </a>
-    <a class="desk-icon" href="#faq">
-      <span class="desk-icon__art desk-icon__art--doc" aria-hidden="true"><span>FAQ</span></span>
-      <span class="desk-icon__name">常见问题</span>
-    </a>
-    <a class="desk-icon" href="#changelog">
-      <span class="desk-icon__art desk-icon__art--doc" aria-hidden="true"><span>LOG</span></span>
-      <span class="desk-icon__name">更新日志</span>
-    </a>
-    <a class="desk-icon" href="#privacy">
-      <span class="desk-icon__art desk-icon__art--folder" aria-hidden="true"></span>
-      <span class="desk-icon__name">隐私说明</span>
-    </a>
-  </nav>
-
-  <!-- 欢迎窗口：首屏的主要文案 -->
-  <section class="window hero" aria-labelledby="heroTitle">
-    <div class="window__bar">
-      <span class="window__lights" aria-hidden="true"><i></i><i></i><i></i></span>
-      <span class="window__title">欢迎使用 OpenStats</span>
+  <section class="hero" aria-labelledby="heroTitle">
+    <p class="hero__kicker"><span class="hero__dot" aria-hidden="true"></span>免费 · 原生 Swift · 数据只在本机</p>
+    <h1 class="hero__title" id="heroTitle">Mac 的状态，<br>抬眼就看见</h1>
+    <p class="hero__lead">CPU、GPU、内存、网络与温度常驻菜单栏，点开就是一张完整的面板。还能调风扇、防休眠、一键清理、卸载应用、检测 IP 纯净度。</p>
+    <div class="hero__actions">
+      <a class="dl-btn" href="download/OpenStats-0.7.0-AppleSilicon.dmg" download>
+        <svg width="15" height="18" viewBox="0 0 14 17" fill="currentColor" aria-hidden="true"><path d="M11.5 9c0-1.9 1.5-2.8 1.6-2.9-.9-1.3-2.2-1.5-2.7-1.5-1.1-.1-2.2.7-2.8.7-.6 0-1.5-.7-2.4-.6-1.2 0-2.4.7-3 1.8-1.3 2.2-.3 5.4 1 7.2.6.8 1.3 1.8 2.2 1.7.9 0 1.2-.6 2.2-.6 1 0 1.3.6 2.2.5.9 0 1.5-.8 2.1-1.7.7-1 .9-1.9.9-1.9s-1.8-.7-1.8-2.7zM9.7 3.2c.5-.6.8-1.4.7-2.2-.7 0-1.6.5-2.1 1.1-.5.6-.9 1.4-.8 2.2.8.1 1.7-.4 2.2-1.1z"/></svg>
+        <span>Apple 芯片</span><small>M1 及更新</small>
+      </a>
+      <a class="dl-btn dl-btn--ghost" href="download/OpenStats-0.7.0-Intel.dmg" download>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5"/><path d="M6 1.5v2.5M10 1.5v2.5M6 12v2.5M10 12v2.5M1.5 6H4M1.5 10H4M12 6h2.5M12 10h2.5"/></svg>
+        <span>Intel 芯片</span><small>Intel 机型</small>
+      </a>
     </div>
-    <div class="window__body hero__body">
-      <img class="hero__icon" src="assets/icon.png?v=871fa442" alt="OpenStats 图标" width="72" height="72">
-      <h1 class="hero__title" id="heroTitle">Mac 的状态，抬眼就看见</h1>
-      <p class="hero__lead">CPU、GPU、内存、网络与温度常驻菜单栏，还能调风扇、防休眠、一键清理、卸载应用，检测 IP 纯净度。所有数据在本机读取，没有统计上报。</p>
-      <div class="hero__actions">
-        <a class="btn btn--primary" href="#download">下载 for Mac</a>
-        <a class="btn btn--secondary" href="#changelog">更新日志</a>
-      </div>
-      <p class="hero__meta">macOS 14 及以上 · Apple 芯片与 Intel 芯片 · 已签名并经 Apple 公证</p>
-      <p class="hero__hint">点右上角菜单栏里的 CPU、内存或网速，看看每一项的详情 ↗</p>
-      <button class="hero__link" id="heroOpenWindow" type="button">或者打开 OpenStats 主窗口</button>
-    </div>
+    <p class="hero__meta">版本 0.7.0 · macOS 14 Sonoma 及以上 · 已签名并经 Apple 公证 · <a href="#changelog">这个版本更新了什么</a></p>
+    <p class="hero__hint">不确定是哪种？点左上角苹果菜单 → 关于本机：“芯片”写着 Apple M… 选 Apple 芯片，“处理器”写着 Intel 选 Intel。</p>
   </section>
 
-  <!-- 菜单栏详情弹窗与主窗口：由 replica.js 渲染 -->
-  <div class="os-popover" id="osPopover" role="dialog" aria-label="OpenStats 详情" hidden></div>
-  <div class="os-window" id="osWindow" role="dialog" aria-label="OpenStats 主窗口" hidden></div>
+  <!-- 桌面小组件：应用自带的“系统概览”中号小组件，可以按住拖动 -->
+  <div class="widget" id="widget" aria-label="OpenStats 桌面小组件（演示）"></div>
+  <p class="desktop__tip" id="desktopTip">小组件可以按住拖动 · 面板顶部的标签可以点</p>
 
-  <!-- 程序坞 -->
   <nav class="dock" aria-label="程序坞">
-    <a class="dock__item" href="#features" title="访达"><span class="dock__art dock__art--finder" aria-hidden="true"></span></a>
-    <button class="dock__item" id="dockOpenStats" type="button" title="打开 OpenStats"><img class="dock__art" src="assets/icon.png?v=871fa442" alt="OpenStats"></button>
-    <a class="dock__item" href="#thermal" title="风扇与防休眠"><span class="dock__art dock__art--fan" aria-hidden="true"></span></a>
-    <a class="dock__item" href="#cleanup" title="清理"><span class="dock__art dock__art--clean" aria-hidden="true"></span></a>
-    <a class="dock__item" href="#install" title="Homebrew 安装"><span class="dock__art dock__art--terminal" aria-hidden="true"></span></a>
+    <a class="dock__item" href="#features" data-tip="功能"><span class="dock__art dock__art--finder" aria-hidden="true"></span></a>
+    <button class="dock__item dock__item--running" id="dockOpenStats" type="button" data-tip="OpenStats"><img class="dock__art" src="assets/icon.png?v=6dea6608" alt="OpenStats"></button>
+    <a class="dock__item" href="#thermal" data-tip="风扇与防休眠"><span class="dock__art dock__art--fan" aria-hidden="true"></span></a>
+    <a class="dock__item" href="#cleanup" data-tip="清理与卸载"><span class="dock__art dock__art--clean" aria-hidden="true"></span></a>
+    <a class="dock__item" href="#install" data-tip="Homebrew 安装"><span class="dock__art dock__art--terminal" aria-hidden="true"></span></a>
     <span class="dock__divider" aria-hidden="true"></span>
-    <a class="dock__item" href="#download" title="下载"><span class="dock__art dock__art--download" aria-hidden="true"></span></a>
+    <a class="dock__item" href="#download" data-tip="下载"><span class="dock__art dock__art--download" aria-hidden="true"></span></a>
   </nav>
-
-  <a class="scroll-cue" href="#features" aria-label="继续了解">继续了解 ↓</a>
+  <a class="desktop__more" href="#features" aria-label="往下看功能介绍">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m4 7 5 5 5-5"/></svg>
+  </a>
 </header>
 
 <main>
+  <!-- ── 功能一览 ── -->
   <section class="band" id="features">
     <div class="shell">
-      <div class="section-head">
-        <h2>每个指标一个图标，点开就是详情</h2>
-        <p>原生 Swift 编写，只显示菜单栏时约 0.3% CPU、16 MB 内存。</p>
+      <div class="section-head reveal">
+        <p class="eyebrow">藏在菜单栏里</p>
+        <h2>一整台 Mac 的状态，<br>不占一个窗口</h2>
+        <p>菜单栏只放你关心的几项读数；想看细节时点一下，它就在那里。不想看时，它连 0.3% 的 CPU 都用不到。</p>
       </div>
-      <ul class="feature-grid">
-        <li class="feature">
-          <h3>八种菜单栏风格</h3>
-          <p>双行文字、圆环、饼图、柱状历史……整体选一种统一套用，也能给单个指标单独指定。</p>
-        </li>
-        <li class="feature">
-          <h3>单项详情，按需显示</h3>
-          <p>CPU、内存、网络、GPU、磁盘、电池、温度各有一个窄弹窗，显示哪些区块由你勾选；另有侧边栏主窗口看全部。</p>
-        </li>
-        <li class="feature">
-          <h3>网络详情与 DNS</h3>
-          <p>本地与公网 IPv4 / IPv6、归属地与 ASN、连接探测格子，一键刷新 DNS 或切换 Cloudflare、Google、腾讯、阿里云。</p>
-        </li>
-        <li class="feature">
-          <h3>IP 纯净度检测</h3>
-          <p>CleanIP.io 纯净度评分与 F 到 A+ 等级，一眼看出出口 IP 是否被标记为 VPN、代理、Tor、机房或有滥用记录；IPv4 / IPv6 分别检测。</p>
-        </li>
-        <li class="feature">
-          <h3>风扇调速与防休眠</h3>
-          <p>自动、降温、强冷、自定义风扇；屏幕常亮、合上屏幕继续运行，过热或电量过低时自动恢复。</p>
-        </li>
-        <li class="feature">
-          <h3>安全的清理</h3>
-          <p>缓存、日志、浏览器与开发者缓存先扫描预览再清理，钥匙串、Cookie 与历史记录一律不碰。</p>
-        </li>
-        <li class="feature">
-          <h3>卸载应用与启动项</h3>
-          <p>卸载时找出应用留下的缓存、偏好设置、容器与登录项，连同应用移到废纸篓可放回；LaunchAgents 与 LaunchDaemons 一览，自己的启动项一键停用。</p>
-        </li>
-        <li class="feature">
-          <h3>磁盘与电池</h3>
-          <p>空间占用分析、文件系统只读检查、本地快照与外置磁盘；电池 24 小时电量曲线、功耗、健康度与蓝牙设备电量。</p>
-        </li>
-        <li class="feature">
-          <h3>数据留在本机</h3>
-          <p>指标来自本机内核、IOKit 与 SMC，没有统计上报；账号可选，只用来同步设置；公网 IP 查询与连接探测都可关闭。</p>
-        </li>
-      </ul>
+      <div class="trio reveal">
+        <article class="trio__item">
+          <span class="trio__icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.5" y="3" width="13" height="10" rx="2"/><path d="M1.5 6h13M4 9h2M8 9h4"/></svg></span>
+          <h3>读数常驻菜单栏</h3>
+          <p>CPU、GPU、内存、网速、温度、电池，八种显示风格任选，可以分开放也可以合成一个图标，间距按你的习惯调。</p>
+        </article>
+        <article class="trio__item">
+          <span class="trio__icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg></span>
+          <h3>一点就看全</h3>
+          <p>点开就是一张完整的面板：三个圆环看负载，两列卡片看电池、磁盘、网络与风扇，再往下是高占用进程与常用工具。</p>
+        </article>
+        <article class="trio__item">
+          <span class="trio__icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="1.5"/><path d="M8 6.5C8 3 9.5 1.8 11 2.6s1 3.4-3 3.9M9.5 8c3.5 0 4.7 1.5 3.9 3s-3.4 1-3.9-3M8 9.5c0 3.5-1.5 4.7-3 3.9s-1-3.4 3-3.9M6.5 8C3 8 1.8 6.5 2.6 5s3.4-1 3.9 3"/></svg></span>
+          <h3>看完还能动手</h3>
+          <p>风扇一键降温或强冷，防休眠选好时长就走开，缓存、日志与卸载残留一次清干净，DNS 一键切换。</p>
+        </article>
+      </div>
+      <div class="grid reveal">
+        <article class="tile"><h3>八种菜单栏风格</h3><p>双行文字、圆环、饼图、柱状历史……整体选一种统一套用，也能给单个指标单独指定。</p></article>
+        <article class="tile"><h3>七张详情卡片</h3><p>CPU、内存、GPU、磁盘、温度、电池、网络，每张卡片顶部同一种版式：一个主数值，三项次要读数。</p></article>
+        <article class="tile"><h3>网络详情与 DNS</h3><p>本地与公网 IPv4 / IPv6、归属地与 ASN、连接探测的延迟与丢包，一键刷新 DNS 或切换 Cloudflare、Google、腾讯、阿里云。</p></article>
+        <article class="tile"><h3>IP 纯净度检测</h3><p>CleanIP.io 纯净度评分从 F 到 A+，一眼看出出口 IP 是否被标记为 VPN、代理、Tor、机房或有滥用记录。</p></article>
+        <article class="tile"><h3>风扇调速与防休眠</h3><p>自动、降温、强冷、自定义风扇；防休眠 1 到 12 小时或一直保持，合盖继续运行，过热或电量过低自动恢复。</p></article>
+        <article class="tile"><h3>GPU、磁盘与电池</h3><p>GPU 功耗、频率与利用率；磁盘按卷拆开看用户数据与系统占用，SSD 健康与累计写入；电池容量、电压与电流。</p></article>
+        <article class="tile"><h3>安全的清理</h3><p>缓存、日志、浏览器与开发者缓存先扫描预览再清理，钥匙串、Cookie 与历史记录一律不碰。</p></article>
+        <article class="tile"><h3>卸载应用与启动项</h3><p>卸载时找出应用留下的缓存、偏好设置、容器与登录项，连同应用移到废纸篓；启动项一览，一键停用。</p></article>
+        <article class="tile"><h3>数据留在本机</h3><p>指标来自本机内核、IOKit 与 SMC，没有统计上报；账号可选，只用来同步设置。</p></article>
+      </div>
     </div>
   </section>
 
-  <section class="band band--alt" id="styles">
+  <!-- ── 点开每一项：各项详情卡片 ── -->
+  <section class="band band--alt" id="cards">
     <div class="shell">
-      <div class="section-head">
-        <h2>菜单栏风格，由你挑</h2>
-        <p>点一下下面的风格，页面顶部菜单栏里的 OpenStats 会立即换成这个样子。</p>
+      <div class="section-head reveal">
+        <p class="eyebrow">点开每一项</p>
+        <h2>每一项都是一张<br>完整的卡片</h2>
+        <p>点下面任意一项，右边就换成应用里那一项的详情卡片。数字是本页模拟的，样式、布局与应用一致。</p>
       </div>
-      <div class="style-picker" id="stylePicker" role="radiogroup" aria-label="菜单栏风格"></div>
-      <div class="style-preview">
-        <div class="style-preview__bar style-preview__bar--light" id="stylePreviewLight"></div>
-        <div class="style-preview__bar style-preview__bar--dark" id="stylePreviewDark"></div>
-        <p class="style-preview__caption" id="styleCaption"></p>
+      <div class="cards reveal">
+        <div class="cards__list" id="cardList" role="tablist" aria-label="选择一项详情"></div>
+        <div class="cards__stage">
+          <div class="os-panel os-panel--stage" id="stagePanel" role="tabpanel" aria-label="详情卡片" data-panel="stage"></div>
+        </div>
       </div>
     </div>
   </section>
 
+  <!-- ── 菜单栏风格 ── -->
+  <section class="band" id="styles">
+    <div class="shell">
+      <div class="section-head reveal">
+        <p class="eyebrow">菜单栏风格</p>
+        <h2>读数怎么画，由你挑</h2>
+        <p>点一下下面的风格，页面顶部菜单栏里的 OpenStats 也会立即换成这个样子。</p>
+      </div>
+      <div class="styles reveal">
+        <div class="style-picker" id="stylePicker" role="radiogroup" aria-label="菜单栏风格"></div>
+        <div class="style-preview">
+          <div class="style-preview__bar style-preview__bar--light" id="stylePreviewLight"></div>
+          <div class="style-preview__bar style-preview__bar--dark" id="stylePreviewDark"></div>
+          <p class="style-preview__caption" id="styleCaption"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 风扇与防休眠 ── -->
+  <section class="band band--alt" id="thermal">
+    <div class="shell split reveal">
+      <div class="split__text">
+        <p class="eyebrow">风扇与防休眠</p>
+        <h2>热的时候让它转，<br>忙的时候别让它睡</h2>
+        <p>风扇在面板里直接选自动、降温或强冷，切换后转速变化马上显示；自定义转速时 CPU 过热会自动交还系统。</p>
+        <p>防休眠选一个时长就开启：1、2、4、8、12 小时或一直保持，可以让屏幕常亮，也可以只让系统不睡、屏幕照常关闭。合盖运行在电量过低时自动关闭。</p>
+        <p class="split__note">这是网页演示，不会改动你电脑的风扇和睡眠设置。</p>
+      </div>
+      <div class="split__demo">
+        <div class="demo-card" id="fanDemo"></div>
+        <div class="demo-card" id="awakeDemo"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 网络 ── -->
   <section class="band" id="network">
-    <div class="shell split">
+    <div class="shell split split--reverse reveal">
       <div class="split__text">
-        <h2>网络，一眼看到底</h2>
-        <ul class="check-list">
-          <li>上下镜像的流量历史，上传绿、下载蓝</li>
-          <li>连接探测格子：每秒 ping 一次，通了是绿格、不通是红格，最近 60 次一眼看清</li>
-          <li>本地与公网 IPv4 / IPv6、路由器、Wi‑Fi 信号，点一下就拷贝</li>
-          <li>归属地显示国旗、城市、ASN 与网络运营方，原生 / 广播、住宅 / 机房直接标出</li>
-          <li>IP 纯净度：CleanIP.io 评分与 F 到 A+ 等级色带，列出 VPN、代理、Tor、机房、滥用记录等风险标记</li>
-          <li>一键刷新 DNS 缓存，一键切换 Cloudflare、Google、腾讯 DNSPod、阿里云，或手动填写</li>
-          <li>各进程的上传与下载速率</li>
-        </ul>
-        <p class="note">公网 IP 查询与连接探测都可以在设置里关闭。修改 DNS 需要管理员权限。</p>
+        <p class="eyebrow">网络与 IP 纯净度</p>
+        <h2>出口在哪、干不干净，<br>一张卡片说清</h2>
+        <p>下载、上传与最近 60 秒的流量；连接探测每秒 ping 一次，延迟和丢包一目了然；接口、信号、开机后的累计流量也都在。</p>
+        <p>公网 IPv4 / IPv6 的归属地、ASN 与运营方，原生 IP、住宅 IP 的标记，以及 CleanIP.io 的纯净度评分。DNS 可以一键切到 Cloudflare、Google、腾讯或阿里云。</p>
       </div>
-      <figure class="shot shot--popover split__media">
-        <img class="shot--light" src="assets/popover-network-light.png?v=871fa442" alt="OpenStats 网络详情弹窗" loading="lazy">
-        <img class="shot--dark" src="assets/popover-network-dark.png?v=871fa442" alt="OpenStats 网络详情弹窗，深色" loading="lazy">
-      </figure>
-    </div>
-  </section>
-
-  <section class="band band--alt" id="themes">
-    <div class="shell">
-      <div class="section-head">
-        <h2>白底蓝，黑底蓝，一套外观</h2>
-        <p>主窗口、设置和弹窗共用同一底色，侧边栏与标题栏不分栏着色；窗口宽高都能拖动调整。</p>
-      </div>
-      <div class="shots">
-        <figure class="shot"><img src="assets/window-light.png?v=871fa442" alt="OpenStats 主窗口仪表盘，浅色" loading="lazy"><figcaption>浅色</figcaption></figure>
-        <figure class="shot"><img src="assets/window-dark.png?v=871fa442" alt="OpenStats 主窗口仪表盘，深色" loading="lazy"><figcaption>深色</figcaption></figure>
+      <div class="split__demo">
+        <div class="os-panel os-panel--inline" id="netDemo" data-panel="net" aria-label="网络详情演示"></div>
       </div>
     </div>
   </section>
 
-  <section class="band" id="thermal">
-    <div class="shell split">
-      <div class="split__text">
-        <h2>热了就吹，要跑就别睡</h2>
-        <table class="mode-table">
-          <thead><tr><th>风扇模式</th><th>作用</th></tr></thead>
-          <tbody>
-            <tr><td>自动</td><td>交还 macOS 温控</td></tr>
-            <tr><td>降温</td><td>最低到最高转速之间的 60%</td></tr>
-            <tr><td>强冷</td><td>最高转速</td></tr>
-            <tr><td>自定义</td><td>滑块自由设定</td></tr>
-          </tbody>
-        </table>
-        <p>合盖后继续运行适合下载、渲染和远程连接。使用电池且电量低于下限时会自动关闭，避免在包里过热。</p>
-        <p class="note">风扇与合盖运行需要安装一次辅助工具。它只提供固定的几个操作，不执行任意命令，应用退出时自动恢复设置。</p>
-      </div>
-      <figure class="shot split__media"><img src="assets/thermal.png?v=871fa442" alt="OpenStats 散热页面" loading="lazy"></figure>
-    </div>
-  </section>
-
+  <!-- ── 清理与卸载 ── -->
   <section class="band band--alt" id="cleanup">
-    <div class="shell split split--reverse">
+    <div class="shell split reveal">
       <div class="split__text">
-        <h2>先看清再清理</h2>
-        <ul class="check-list">
-          <li>应用缓存、日志与崩溃报告</li>
-          <li>Chrome、Edge、Brave、Arc、Firefox、Safari 缓存</li>
-          <li>Xcode 编译缓存、模拟器与 npm 缓存</li>
-          <li>未完成的下载、安装包、废纸篓</li>
-          <li>一键刷新 DNS 缓存、释放内存</li>
-        </ul>
-        <p>只处理白名单目录；正在运行的应用会跳过，浏览器需先退出；删除前每一项再校验一次，所有操作写入日志。</p>
+        <p class="eyebrow">清理与卸载</p>
+        <h2>先看清再删，<br>不该碰的一律不碰</h2>
+        <p>缓存、日志、浏览器与开发者缓存先扫描、逐项预览再清理；正在运行的应用的缓存会跳过，下载目录里的内容先移到废纸篓。</p>
+        <p>卸载应用时一并找出它留下的缓存、偏好设置、容器、登录项与崩溃报告，共享的目录默认保留。</p>
       </div>
-      <figure class="shot split__media"><img src="assets/cleaner.png?v=871fa442" alt="OpenStats 清理页面" loading="lazy"></figure>
+      <div class="split__demo">
+        <div class="demo-card demo-card--wide" id="cleanDemo"></div>
+      </div>
     </div>
   </section>
 
+  <!-- ── 隐私 ── -->
   <section class="band" id="privacy">
-    <div class="shell narrow">
-      <div class="section-head">
-        <h2>数据不出这台 Mac</h2>
-        <p>没有统计上报。账号是可选的，只用来同步偏好设置；另有两项可关闭的网络功能会联网。</p>
+    <div class="shell">
+      <div class="section-head reveal">
+        <p class="eyebrow">隐私</p>
+        <h2>数据留在这台 Mac</h2>
+        <p>所有指标都在本机读取和计算。下面这几项需要联网，都可以在设置里关掉。</p>
       </div>
-      <ul class="fact-list">
-        <li><b>指标来源</b><span>内核接口（host_processor_info、host_statistics64、sysctl）、IOKit 与 SMC</span></li>
-        <li><b>账号</b><span>可选。用 GitHub、Google 或 Apple 登录后，偏好设置同步到你的其他 Mac；云端只保存邮箱、姓名与设置文档，可随时删除。详见<a href="privacy.html">隐私政策</a></span></li>
-        <li><b>统计上报</b><span>没有</span></li>
-        <li><b>公网 IP</b><span>打开网络详情时向 Cloudflare 查询一次公网地址，10 分钟内不重复，可关闭</span></li>
-        <li><b>归属地</b><span>归属地、ASN、网络类型与纯净度评分来自 cleanip.io，这台 Mac 直接向它查自己的公网 IP，只发送这个地址</span></li>
-        <li><b>连接探测</b><span>打开网络详情时每秒 ping 一次你选择的目标（后台每 10 秒），只在显示网络项时运行，可关闭</span></li>
-        <li><b>偏好设置</b><span>保存在本机；登录后同步的那一份不含任何监控数据</span></li>
-      </ul>
+      <div class="grid grid--2 reveal">
+        <article class="tile"><h3>没有统计上报</h3><p>不收集使用数据、崩溃报告或设备信息；读数来自本机内核、IOKit 与 SMC。</p></article>
+        <article class="tile"><h3>公网地址与纯净度</h3><p>打开网络详情时向 Cloudflare 查一次公网地址；归属地、ASN 与纯净度由这台 Mac 直接向 cleanip.io 查询，只发送公网地址。</p></article>
+        <article class="tile"><h3>连接探测</h3><p>按你设定的间隔 ping 你选择的目标，只用来判断网络通不通。</p></article>
+        <article class="tile"><h3>检查更新与账号</h3><p>每天从本站检查一次新版本。账号可选，只用来同步设置。</p></article>
+      </div>
     </div>
   </section>
 
+  <!-- ── 下载 ── -->
   <section class="band band--alt" id="download">
-    <div class="shell narrow download">
-      <img src="assets/icon.png?v=871fa442" alt="" width="96" height="96">
-      <h2>下载 OpenStats</h2>
-      <p>使用 Developer ID 签名并经过 Apple 公证，打开时不会遇到安全拦截。</p>
-      <ul class="download__options">
-        <li class="download__option">
-          <h3>Apple 芯片</h3>
-          <p>M1、M2、M3、M4、M5 系列的 Mac</p>
-          <a class="btn btn--primary" href="download/OpenStats-0.7.0-AppleSilicon.dmg">下载 Apple 芯片版</a>
-        </li>
-        <li class="download__option">
-          <h3>Intel 芯片</h3>
-          <p>能升级到 macOS 14 的 Intel Mac（大多为 2018 年及以后的机型）</p>
-          <a class="btn btn--primary" href="download/OpenStats-0.7.0-Intel.dmg">下载 Intel 版</a>
-        </li>
-      </ul>
-      <p class="download__hint">不确定是哪种？打开苹果菜单 › 关于本机，看“芯片”或“处理器”那一行。</p>
-      <p class="hero__meta">版本 0.7.0 · macOS 14 Sonoma 及以上 · 简体中文与 English 界面 · <a href="#changelog">这个版本更新了什么</a></p>
-      <p class="download__brew">也可以用 Homebrew 安装：<code>brew tap gentpan/tap &amp;&amp; brew trust gentpan/tap &amp;&amp; brew install --cask openstats</code></p>
+    <div class="shell narrow">
+      <div class="section-head section-head--center reveal">
+        <img class="download__icon" src="assets/icon.png?v=6dea6608" alt="OpenStats 图标" width="88" height="88">
+        <h2>现在就装上</h2>
+        <p>Apple 芯片版与 Intel 版都经过 Developer ID 签名和 Apple 公证。</p>
+      </div>
+      <div class="download reveal">
+        <a class="dl-card" href="download/OpenStats-0.7.0-AppleSilicon.dmg" download>
+          <b>Apple 芯片</b><span>M1、M2、M3、M4、M5 系列</span><em>下载 DMG</em>
+        </a>
+        <a class="dl-card" href="download/OpenStats-0.7.0-Intel.dmg" download>
+          <b>Intel 芯片</b><span>2016 年以后的 Intel Mac</span><em>下载 DMG</em>
+        </a>
+      </div>
+      <p class="hero__meta download__meta">版本 0.7.0 · macOS 14 Sonoma 及以上 · 简体中文与 English 界面 · <a href="#changelog">这个版本更新了什么</a></p>
+      <div class="brew reveal" id="install">
+        <span class="brew__label">Homebrew</span>
+        <code class="brew__cmd">brew tap gentpan/tap &amp;&amp; brew trust gentpan/tap &amp;&amp; brew install --cask openstats</code>
+        <button class="brew__copy" type="button" data-copy="brew tap gentpan/tap &amp;&amp; brew trust gentpan/tap &amp;&amp; brew install --cask openstats">拷贝</button>
+      </div>
     </div>
   </section>
 
+  <!-- ── 更新日志 ── -->
   <section class="band" id="changelog">
     <div class="shell narrow">
-      <div class="section-head">
-        <h2>更新日志</h2>
-        <p>每天改了什么，都记在这里。</p>
+      <div class="section-head reveal">
+        <p class="eyebrow">更新日志</p>
+        <h2>每天改了什么</h2>
+        <p>都记在这里，最新的在最上面。</p>
       </div>
       <!-- changelog:start -->
       <!-- 由 Scripts/sync_changelog.py 从 CHANGELOG.md 生成，请勿手改。 -->
@@ -666,9 +635,10 @@
     </div>
   </section>
 
+  <!-- ── 常见问题 ── -->
   <section class="band band--alt" id="faq">
     <div class="shell narrow">
-      <div class="section-head"><h2>常见问题</h2></div>
+      <div class="section-head reveal"><p class="eyebrow">帮助</p><h2>常见问题</h2></div>
       <details class="faq">
         <summary>会不会很耗电？</summary>
         <p>只显示菜单栏时只采集菜单栏用到的指标，M5 Max 实测约 0.3% CPU、16 MB 内存；锁屏、屏幕休眠和系统睡眠时暂停采样与探测。</p>
@@ -689,7 +659,7 @@
         <summary>清理会不会删掉重要文件？</summary>
         <p>只清理白名单目录中的缓存与日志，钥匙串、密码管理器、VPN、Cookie、历史记录一律不碰；清理前可以展开查看每一项，下载目录中的内容会先移到废纸篓。</p>
       </details>
-      <details class="faq" id="install">
+      <details class="faq">
         <summary>怎么安装、卸载？</summary>
         <p>下载 DMG 后把 OpenStats 拖进“应用程序”；也可以用 Homebrew：<code>brew tap gentpan/tap &amp;&amp; brew trust gentpan/tap &amp;&amp; brew install --cask openstats</code>（新版 Homebrew 要先信任第三方 tap 才能安装）。卸载时先在“设置 › 辅助工具”里卸载辅助工具，再把应用移到废纸篓；用 Homebrew 安装的执行 <code>brew uninstall --zap --cask openstats</code>。</p>
       </details>
@@ -707,13 +677,14 @@
 
 <footer class="footer">
   <div class="shell footer__inner">
-    <span class="footer__brand"><img src="assets/icon.png?v=871fa442" alt="" width="20" height="20">OpenStats</span>
-    <span class="footer__fine">© 2026 GiantAccel, LLC</span>
-    <span class="footer__fine">OpenStats 是独立的第三方应用，与 Apple 没有隶属关系。</span>
+    <span class="footer__brand"><img src="assets/icon.png?v=6dea6608" alt="" width="20" height="20">OpenStats</span>
+    <a class="footer__link" href="https://github.com/gentpan/OpenStats">GitHub</a>
+    <a class="footer__link" href="privacy.html">隐私政策</a>
+    <span class="footer__fine">© 2026 GiantAccel, LLC · OpenStats 是独立的第三方应用，与 Apple 没有隶属关系。</span>
   </div>
 </footer>
 
-<script src="app.js?v=871fa442" defer></script>
-<script src="replica.js?v=871fa442" defer></script>
+<script src="app.js?v=6dea6608" defer></script>
+<script src="replica.js?v=6dea6608" defer></script>
 </body>
 </html>
