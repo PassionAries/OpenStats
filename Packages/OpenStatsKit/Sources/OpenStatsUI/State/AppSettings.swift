@@ -34,15 +34,15 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    /// 菜单栏上方的小标签
+    /// 菜单栏上方的小标签，统一三个大写字母
     var menuBarLabel: String {
         switch self {
         case .cpu: "CPU"
         case .memory: "RAM"
         case .network: "NET"
         case .gpu: "GPU"
-        case .disk: "DISK"
-        case .temperature: "TEMP"
+        case .disk: "SSD"
+        case .temperature: "TMP"
         case .fan: "FAN"
         case .battery: "BAT"
         }
