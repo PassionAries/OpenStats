@@ -22,6 +22,8 @@ final class StatusPanel: NSPanel {
     private let width: CGFloat
     /// 内容再少也不低于这个高度；合并模式的状态总览项目少时很矮，用更小的下限
     private let minHeight: CGFloat
+    /// 这一轮 SwiftUI 更新里最后一次上报的高度差，等这一轮结束再处理
+    private var pendingOverflow: CGFloat?
 
     init<Content: View, Measuring: View>(width: CGFloat, minHeight: CGFloat = DS.Size.panelMinHeight,
                                          content: @escaping () -> Content, measuring: @escaping () -> Measuring) {
@@ -66,6 +68,7 @@ final class StatusPanel: NSPanel {
         anchorScreen = screen
 
         guard let content = makeContent?() else { return }
+        pendingOverflow = nil
         setFrame(targetFrame(), display: false)
         content.frame = NSRect(origin: .zero, size: frame.size)
         contentView = PanelContainer.make(containing: content, cornerRadius: DS.Radius.xl)
@@ -86,12 +89,28 @@ final class StatusPanel: NSPanel {
         guard isVisible else { return }
         let frame = targetFrame()
         guard abs(frame.height - self.frame.height) > 1 else { return }
+        // 按绝对高度重设后，之前排着的差值已经过时
+        pendingOverflow = nil
         setFrame(frame, display: true)
         invalidateShadow()
     }
 
-    /// 滚动内容比可视区域高出（或矮出）一截时调整窗口高度，顶边不动；屏幕放不下时停在最高处，由滚动条兜底
+    /// 滚动内容比可视区域高出（或矮出）一截时调整窗口高度，顶边不动；屏幕放不下时停在最高处，由滚动条兜底。
+    /// 内容高度与可视高度分两次上报，同一轮里先到的那次用的是另一项的旧值。若在上报时直接改窗口，
+    /// macOS 15 会当场重排并再次上报，旧差值与新差值交替叠加，窗口高度来回振荡、卡在同一轮更新里出不来（#10）。
+    /// 所以只记下最后一次的差值，等这一轮更新结束、两项都是新值时再调整一次
     func adjustHeight(by overflow: CGFloat) {
+        let isScheduled = pendingOverflow != nil
+        pendingOverflow = overflow
+        guard !isScheduled else { return }
+        DispatchQueue.main.async { [weak self] in
+            MainActor.assumeIsolated { self?.applyPendingOverflow() }
+        }
+    }
+
+    private func applyPendingOverflow() {
+        guard let overflow = pendingOverflow else { return }
+        pendingOverflow = nil
         guard contentView != nil, abs(overflow) > 1 else { return }
         let height = min(max(frame.height + overflow, minHeight), availableHeight())
         guard abs(height - frame.height) > 1 else { return }
