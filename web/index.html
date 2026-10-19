@@ -335,6 +335,14 @@
       <!-- 由 Scripts/sync_changelog.py 从 CHANGELOG.md 生成，请勿手改。 -->
       <div class="log">
         <article class="log__day">
+          <div class="log__head"><time datetime="2026-10-19">2026-10-19</time><span class="log__tag">0.7.1</span></div>
+          <p class="log__counts">调整 1 · 修复 1</p>
+          <ul class="log__list">
+            <li><span class="log__kind">调整</span>菜单栏标签统一为三个大写字母：DISK 改为 SSD，TEMP 改为 TMP。回应 <a href="https://github.com/gentpan/OpenStats/issues/11">Issue #11</a>。</li>
+            <li><span class="log__kind">修复</span>macOS 15 上，合并面板从总览切到任意标签时面板高度来回振荡，导致菜单卡死、内存持续上涨。回应 <a href="https://github.com/gentpan/OpenStats/issues/10">Issue #10</a>。</li>
+          </ul>
+        </article>
+        <article class="log__day">
           <div class="log__head"><time datetime="2026-10-14">2026-10-14</time><span class="log__tag">0.7.0</span></div>
           <p class="log__counts">新增 7 · 改进 3 · 样式 3 · 调整 2 · 修复 2</p>
           <ul class="log__list">
@@ -373,6 +381,8 @@
             <li><span class="log__kind">新增</span>合并菜单栏可在「设置 · 菜单栏 · 显示项目」用上移、下移按钮调整图标顺序，立即更新，并保存和同步设置；关闭项目后再开启仍记住位置。回应 <a href="https://github.com/gentpan/OpenStats/issues/7">Issue #7</a>。</li>
           </ul>
         </article>
+        <details class="log__older">
+          <summary>更早的更新（16 天）</summary>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-10-09">2026-10-09</time><span class="log__tag">0.6.3</span></div>
           <p class="log__counts">修复 3</p>
@@ -382,8 +392,6 @@
             <li><span class="log__kind">修复</span>应用卸载有部分文件未能移到废纸篓时，只统计实际成功的项目与空间，保留失败项供重试；只有应用本体成功移除才清除程序坞图标和累计卸载次数。</li>
           </ul>
         </article>
-        <details class="log__older">
-          <summary>更早的更新（15 天）</summary>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-10-01">2026-10-01</time><span class="log__tag">0.6.3</span></div>
           <p class="log__counts">新增 3 · 调整 2</p>

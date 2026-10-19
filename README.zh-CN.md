@@ -57,9 +57,22 @@ CPU 不分性能核与能效核，部分功耗与频率读数可能不显示。
 <!-- changelog:start -->
 <!-- 由 Scripts/sync_changelog.py 从 CHANGELOG.md 生成，请勿手改。 -->
 
-最新版本 **0.7.0**（2026-10-14） · [完整更新日志](CHANGELOG.md)
+最新版本 **0.7.1**（2026-10-19） · [完整更新日志](CHANGELOG.md)
 
 <details open>
+<summary><b>2026-10-19</b> · 0.7.1 · 调整 1 · 修复 1</summary>
+
+**调整**
+
+- 菜单栏标签统一为三个大写字母：DISK 改为 SSD，TEMP 改为 TMP。回应 [Issue #11](https://github.com/gentpan/OpenStats/issues/11)。
+
+**修复**
+
+- macOS 15 上，合并面板从总览切到任意标签时面板高度来回振荡，导致菜单卡死、内存持续上涨。回应 [Issue #10](https://github.com/gentpan/OpenStats/issues/10)。
+
+</details>
+
+<details>
 <summary><b>2026-10-14</b> · 0.7.0 · 新增 7 · 改进 3 · 样式 3 · 调整 2 · 修复 2</summary>
 
 **新增**
@@ -112,17 +125,6 @@ CPU 不分性能核与能效核，部分功耗与频率读数可能不显示。
 **新增**
 
 - 合并菜单栏可在「设置 · 菜单栏 · 显示项目」用上移、下移按钮调整图标顺序，立即更新，并保存和同步设置；关闭项目后再开启仍记住位置。回应 [Issue #7](https://github.com/gentpan/OpenStats/issues/7)。
-
-</details>
-
-<details>
-<summary><b>2026-10-09</b> · 0.6.3 · 修复 3</summary>
-
-**修复**
-
-- 合并显示时菜单栏的小标签颜色过淡：图标中带有彩色网速圆点时，CPU、内存等标签会直接画成灰色，在深色菜单栏上不容易看清。标签和网速箭头现在与数值使用同一种前景色，仍通过字号区分标签与读数。跟进 [Issue #5](https://github.com/gentpan/OpenStats/issues/5)。
-- 应用卸载的残留查找增强：读取应用真实名称、内嵌辅助组件的包名和签名中的应用组，按容器元数据识别 UUID 命名的沙盒数据；最近文档、CrashReporter、Sparkle、SentryCrash 和厂商目录内的应用子项也会检查。补上 VS Code、Insiders、Arc、Chrome 的明确数据位置。共享容器、按名称找到的 Sentry 数据和可能共用的辅助组件数据会标明并默认不勾选，厂商共享父目录始终保留。扫描及回收前重查路径，跳过符号链接重定向。参考 Pearcleaner 的查找思路，跟进 [Issue #4](https://github.com/gentpan/OpenStats/issues/4)。
-- 应用卸载有部分文件未能移到废纸篓时，只统计实际成功的项目与空间，保留失败项供重试；只有应用本体成功移除才清除程序坞图标和累计卸载次数。
 
 </details>
 
