@@ -4,7 +4,7 @@
 #
 #   ./server/geoip/configure.sh
 set -euo pipefail
-HOST="${SITE_HOST:-root@15.204.123.216}"
+HOST="${SITE_HOST:-root@64.204.24.77}"
 KEY="${SITE_KEY:-$HOME/.ssh/gentpan.pem}"
 SSH=(ssh -i "$KEY" -o BatchMode=yes "$HOST")
 
