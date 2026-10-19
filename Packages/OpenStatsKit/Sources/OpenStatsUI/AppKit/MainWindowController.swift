@@ -35,8 +35,8 @@ final class MainWindowController: NSObject, NSWindowDelegate {
     }
 
     private func makeWindow() -> NSWindow {
-        let width = DS.Size.sidebarWidth + DS.Size.panelWidth
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: DS.Size.sidebarWidth + DS.Size.windowDefaultContentWidth,
+        let width = DS.Size.mainWindowMinWidth
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: width - DS.Size.panelWidth + DS.Size.windowDefaultContentWidth,
                                                   height: DS.Size.panelMinHeight * 2),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                               backing: .buffered,

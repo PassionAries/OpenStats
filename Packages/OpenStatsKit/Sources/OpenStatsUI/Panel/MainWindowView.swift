@@ -4,8 +4,8 @@ import Metrics
 import SwiftUI
 
 /// 主窗口。左侧切换页面，右侧是仪表盘、各指标详情与工具页；窗口宽高都可调整。
-/// macOS 26 起侧边栏是一块浮在窗口里的液态玻璃面板，顶栏控件是玻璃胶囊；
-/// 更早的系统上侧边栏、标题栏与页面在同一张底色上，不分栏着色，也不画分隔线
+/// 整个窗口垫一层灰色底（系统侧边栏材质），侧边栏直接排在底上；右侧页面装在一张大的圆角卡片里，
+/// 上、右、下三边与窗口留一圈边距，红绿灯按钮落在左上角的灰底上
 public struct MainWindowView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.isSnapshot) private var isSnapshot
@@ -17,18 +17,21 @@ public struct MainWindowView: View {
             MainSidebar()
                 .frame(width: DS.Size.sidebarWidth)
                 .frame(maxHeight: .infinity)
-                .background(alignment: .top) {
-                    WindowDragArea().frame(height: DS.Size.windowHeader)
-                }
-                .modifier(SidebarPanel())
+                .environment(\.isInsideGlass, true)
 
+            // 截图时页面取自身高度，卡片仍然撑满到底：侧边栏更高时，多出来的是卡片的空白
             content
                 .frame(minWidth: DS.Size.panelWidth, maxWidth: .infinity)
-                .frame(maxHeight: isSnapshot ? nil : .infinity, alignment: .top)
+                .frame(maxHeight: .infinity, alignment: .top)
+                .modifier(ContentCard())
         }
-        .frame(width: isSnapshot ? DS.Size.sidebarWidth + DS.Size.panelWidth : nil)
+        .frame(width: isSnapshot ? DS.Size.mainWindowMinWidth : nil)
         .fixedSize(horizontal: false, vertical: isSnapshot)
-        .background(DS.Palette.background)
+        // 卡片上方那一条灰底与侧边栏顶部都在标题栏里，按住可以拖动窗口；卡片本身挡在上面，不受影响
+        .background(alignment: .top) {
+            WindowDragArea().frame(height: DS.Size.windowHeader)
+        }
+        .background { WindowBase() }
         // 需要等待的任务进行中，整个窗口压暗并显示加载框
         .loadingHUD(isSnapshot ? nil : busyMessage)
         // 内容延伸到透明标题栏下方，由顶栏高度留出红绿灯按钮的位置
@@ -93,24 +96,44 @@ public struct MainWindowView: View {
     }
 }
 
-/// macOS 26：侧边栏浮在窗口里，四周留一圈边距，整块是液态玻璃，红绿灯按钮落在面板里
-private struct SidebarPanel: ViewModifier {
+/// 右侧页面的大卡片：页面底色、圆角裁切，上、右、下三边让出一圈灰底。
+/// 阴影只画在底板上，不让整棵页面（图表每秒刷新）参与阴影计算
+private struct ContentCard: ViewModifier {
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+        content
+            .clipShape(shape)
+            .background {
+                shape.fill(DS.Palette.background).dsShadow(DS.Shadow.level1)
+            }
+            .padding([.top, .trailing, .bottom], DS.Size.mainWindowInset)
+    }
+}
+
+/// 窗口底层：系统侧边栏材质，浅色是透出一点桌面颜色的浅灰，深色是深灰，窗口失焦时变为实色。
+/// 离屏截图拍不出材质，画相近的实色
+private struct WindowBase: View {
     @Environment(\.isSnapshot) private var isSnapshot
 
-    func body(content: Content) -> some View {
-        if DS.Glass.isAvailable, !isSnapshot {
-            // 红绿灯在面板外：面板从标题栏下方开始，标题栏那一条是窗口底色，按住可以拖动窗口
-            content
-                .environment(\.isInsideGlass, true)
-                .dsGlass(in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-                .padding(.horizontal, DS.Space.s2)
-                .padding(.bottom, DS.Space.s2)
-                .padding(.top, DS.Size.windowHeader)
-                .background(alignment: .top) { WindowDragArea().frame(height: DS.Size.windowHeader) }
+    var body: some View {
+        if isSnapshot {
+            DS.Palette.windowBase
         } else {
-            content
+            SidebarMaterial()
         }
     }
+}
+
+private struct SidebarMaterial: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = .sidebar
+        view.blendingMode = .behindWindow
+        view.state = .followsWindowActiveState
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
 }
 
 /// 指标详情页：复用菜单栏弹窗的内容，显示全部区块
@@ -151,15 +174,9 @@ private struct MainSidebar: View {
         }
         .padding(.leading, DS.Space.s1)
         .padding(.trailing, DS.Space.s3)
-        .padding(.top, sidebarTopPadding)
+        // 顶部让出标题栏的高度，红绿灯按钮在这一条里
+        .padding(.top, DS.Size.windowHeader)
         .padding(.bottom, DS.Space.s3)
-    }
-
-    private var usesGlassPanel: Bool { DS.Glass.isAvailable && !isSnapshot }
-
-    /// 侧边栏内容离自身顶边的距离：玻璃面板在标题栏下方，只留一点边距；没有面板时给红绿灯留出标题栏的高度
-    private var sidebarTopPadding: CGFloat {
-        usesGlassPanel ? DS.Space.s3 : DS.Size.windowHeader + DS.Space.s2
     }
 
     private var navigation: some View {
@@ -357,7 +374,7 @@ private struct PageHeader: View {
             // 每个监控页都能在这里开关自己的菜单栏项目；温度与风扇页有两项，各带一个小标签
             let items = tab.menuBarItems
             if !items.isEmpty {
-                // macOS 26 上这一组是一颗玻璃胶囊，与访达工具栏的分组一致
+                // macOS 26 上这一组收进一块超椭圆圆角的玻璃
                 HStack(spacing: DS.Space.s3) {
                     Text(tr("在菜单栏显示")).dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
                     ForEach(items) { item in
@@ -378,7 +395,7 @@ private struct PageHeader: View {
     }
 }
 
-/// 顶栏右侧的一组控件：macOS 26 上收进一颗玻璃胶囊，更早的系统直接排开
+/// 顶栏右侧的一组控件：macOS 26 上收进一块超椭圆圆角的玻璃，更早的系统直接排开
 private struct HeaderControlGroup: ViewModifier {
     func body(content: Content) -> some View {
         if DS.Glass.isAvailable {
@@ -386,7 +403,7 @@ private struct HeaderControlGroup: ViewModifier {
                 .padding(.leading, DS.Space.s4)
                 .padding(.trailing, DS.Space.s2)
                 .frame(height: DS.Size.controlHeight)
-                .dsGlass(in: Capsule())
+                .dsGlass(in: ControlShape())
         } else {
             content
         }

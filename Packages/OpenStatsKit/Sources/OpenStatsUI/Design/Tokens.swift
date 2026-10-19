@@ -27,6 +27,8 @@ extension DS {
         // OpenStats 的统一配色：浅色为白底蓝色，深色为黑底蓝色。
         // 窗口、侧边栏、标题栏与弹窗共用同一底色，卡片用浅灰 / 深灰实色区分层级，不加边框
         static let background = Color(nsColor: NSColor.dsBackground)
+        /// 主窗口的底层：侧边栏与内容卡片四周那一圈。平时是系统侧边栏材质，这是截图等拍不出材质时的近似实色
+        static let windowBase = Color.dynamic(light: 0xE8E9ED, dark: 0x1E1F23)
         static let surface = Color.dynamic(light: 0xF3F4F6, dark: 0x17181B)
         /// 卡片上的控件底色（分段选中块、次要按钮、输入框）
         static let elevated = Color.dynamic(light: 0xFFFFFF, dark: 0x26282D)
@@ -206,6 +208,10 @@ extension DS {
         /// 主窗口默认内容区宽度（侧边栏另计）
         static let windowDefaultContentWidth: CGFloat = 880
         static let sidebarWidth: CGFloat = 192
+        /// 主窗口右侧页面卡片与窗口上、右、下边缘的距离
+        static let mainWindowInset: CGFloat = DS.Space.s2
+        /// 主窗口最窄的宽度：侧边栏、最窄的页面卡片与右侧边距
+        static let mainWindowMinWidth: CGFloat = sidebarWidth + panelWidth + mainWindowInset
         /// 升级提示窗口
         static let updateWindowWidth: CGFloat = 480
         static let updateNotesHeight: CGFloat = 192
