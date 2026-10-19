@@ -25,10 +25,7 @@ struct OverviewPage: View {
                 CoreLoadCard()
                 if model.store.battery != nil { BatteryCard() }
             }
-            WeightedRow(weights: [2, 1]) {
-                TopProcessesCard()
-                QuickActionsCard()
-            }
+            TopProcessesCard()
         }
     }
 }
@@ -510,64 +507,6 @@ struct TopProcessesCard: View {
     private func cpuTone(_ value: Double) -> Tone {
         let share = value / Double(Format.logicalCores)
         return share >= 0.5 ? .error : share >= 0.25 ? .warning : .neutral
-    }
-}
-
-// MARK: - 快捷开关
-
-private struct QuickActionsCard: View {
-    @Environment(AppModel.self) private var model
-
-    var body: some View {
-        let keepAwake = model.keepAwake
-        let fans = model.fans
-        Card(padding: DS.Space.s3, spacing: 0) {
-            HStack(spacing: DS.Space.s1) {
-                Image(systemName: "switch.2").dsFont(.xs, weight: .semibold)
-                Text(tr("快捷开关")).dsFont(.xs, weight: .semibold)
-            }
-            .foregroundStyle(DS.Palette.textSecondary)
-            .padding(.bottom, DS.Space.s1)
-
-            QuickToggleRow(icon: "cup.and.saucer", title: tr("防休眠"),
-                           detail: keepAwake.isActive ? tr("保持唤醒") : tr("按系统休眠"),
-                           isOn: Binding(get: { keepAwake.isActive },
-                                         set: { value in Task { await keepAwake.setActive(value) } }))
-            HairlineDivider()
-            QuickToggleRow(icon: "laptopcomputer", title: tr("合盖运行"),
-                           detail: keepAwake.lidClosedActive ? tr("继续运行") : tr("合盖睡眠"),
-                           isOn: Binding(get: { keepAwake.lidClosedRequested },
-                                         set: { model.requestLidMode($0) }))
-            HairlineDivider()
-            QuickToggleRow(icon: "fan", title: tr("散热模式"),
-                           detail: fans.mode == .automatic ? tr("系统调节") : tr("\(fans.mode.title)中"),
-                           isOn: Binding(get: { fans.mode != .automatic },
-                                         set: { model.requestFanMode($0 ? .cooling : .automatic) }))
-        }
-    }
-}
-
-/// 快捷开关的一行：图标、名称与当前状态，右侧开关
-private struct QuickToggleRow: View {
-    let icon: String
-    let title: String
-    let detail: String
-    @Binding var isOn: Bool
-
-    var body: some View {
-        HStack(spacing: DS.Space.s2) {
-            Image(systemName: icon)
-                .dsFont(.sm, weight: .medium)
-                .foregroundStyle(isOn ? DS.Palette.primary : DS.Palette.textSecondary)
-                .frame(width: DS.Size.iconStandalone)
-            VStack(alignment: .leading, spacing: 0) {
-                Text(title).dsFont(.sm, weight: .medium).foregroundStyle(DS.Palette.textPrimary).lineLimit(1)
-                Text(detail).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary).lineLimit(1)
-            }
-            Spacer(minLength: DS.Space.s2)
-            DSToggle(isOn: $isOn, label: title)
-        }
-        .padding(.vertical, DS.Space.s2)
     }
 }
 

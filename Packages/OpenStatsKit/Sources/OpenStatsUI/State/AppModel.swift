@@ -106,7 +106,7 @@ public final class AppModel {
         demand.gpu = overview || (window && tab == .system) || menu.contains(.gpu) || showing(.gpu, .gpu)
         demand.disk = overview || (window && [.system, .cleaner, .disk].contains(tab)) || menu.contains(.disk) || popover == .disk
         demand.diskDetail = showing(.disk, .disk)
-        demand.battery = overview || (window && [.system, .keepAwake].contains(tab)) || keepAwake.lidClosedActive
+        demand.battery = overview || (window && tab == .keepAwake) || keepAwake.lidClosedActive
             || menu.contains(.battery) || showing(.battery, .battery)
         demand.processes = overview || (window && [.processes, .disk].contains(tab)) || showing(.cpu, .cpu) || showing(.memory, .memory)
             || popover == .disk
@@ -128,10 +128,10 @@ public final class AppModel {
         return demand
     }
 
-    /// 蓝牙电量读取很慢，只在需要时轮询：电池弹窗 / 页面、本机信息页打开时每分钟；
+    /// 蓝牙电量读取很慢，只在需要时轮询：电池弹窗 / 页面打开时每分钟；
     /// 菜单栏开着电池项且要做低电量提示、或这台 Mac 没有电池时每 5 分钟
     var bluetoothDemand: BluetoothController.Demand {
-        if (isMainWindowVisible && [.battery, .system].contains(settings.panelTab)) || openPopover == .battery { return .foreground }
+        if (isMainWindowVisible && settings.panelTab == .battery) || openPopover == .battery { return .foreground }
         if settings.drawnMenuBarItems.contains(.battery) && (settings.bluetoothLowBatteryInMenuBar || store.battery == nil) { return .background }
         return .off
     }
@@ -169,7 +169,12 @@ public final class AppModel {
         Task { await fans.select(mode) }
     }
 
-    /// 概览页快捷开关合盖运行：同时开启防休眠
+    /// 快捷开关风扇调速：打开时沿用上次选的档位，关闭时交还系统自动控制
+    func requestFanControl(_ enabled: Bool) {
+        requestFanMode(enabled ? fans.lastManualMode : .automatic)
+    }
+
+    /// 侧边栏防休眠右键菜单开关合盖运行：同时开启防休眠
     func requestLidMode(_ enabled: Bool) {
         guard helper.isReady else {
             settings.panelTab = .keepAwake

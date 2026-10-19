@@ -3,7 +3,7 @@ import Localization
 import Metrics
 import SwiftUI
 
-/// 本机信息：机型、芯片、内存、图形、存储、显示器、电池与标识
+/// 本机信息：机型、芯片、内存、图形、显示器与标识。存储看磁盘页，电池与蓝牙设备看电池页，这里不重复
 struct SystemInfoPage: View {
     @Environment(AppModel.self) private var model
     @Environment(\.isSnapshot) private var isSnapshot
@@ -59,49 +59,6 @@ struct SystemInfoPage: View {
                     InfoRow(label: tr("内存类型"), text: tr("统一内存（CPU 与 GPU 共享）"))
                 }
             }
-
-            WeightedRow(weights: [1, 1]) {
-                InfoCard(icon: "internaldrive", title: tr("存储")) {
-                    if let disk = store.disk {
-                        InfoRow(label: tr("卷"), text: disk.volumeName)
-                        InfoRow(label: tr("容量"), text: Format.bytes(disk.total, base: .decimal))
-                        InfoRow(label: tr("可用"), text: Format.bytes(disk.available, base: .decimal))
-                        ProgressTrack(fraction: disk.usedFraction,
-                                      color: disk.usedFraction > 0.9 ? DS.Palette.warning : DS.Palette.primary)
-                    } else {
-                        Text(tr("正在读取…")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
-                    }
-                }
-                InfoCard(icon: "battery.75", title: tr("电池")) {
-                    if let battery = store.battery {
-                        InfoRow(label: tr("电量"), text: Format.percent(battery.level))
-                        InfoRow(label: tr("健康度"), text: battery.health.map { Format.percent($0) } ?? "—")
-                        InfoRow(label: tr("循环次数"), text: battery.cycleCount.map(String.init) ?? "—")
-                        InfoRow(label: tr("电源"), text: battery.isPluggedIn ? tr("电源适配器\(battery.adapterWatts.map { " · \($0)W" } ?? "")") : tr("电池供电"))
-                        // macOS 26 起系统自带充电上限；新款机型已不开放第三方写入 SMC 充电控制键，不另做一套
-                        if ProcessInfo.processInfo.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 26, minorVersion: 0, patchVersion: 0)) {
-                            HStack(spacing: DS.Space.s2) {
-                                Text(tr("充电上限可在系统设置中设为 80%–100%，长期接电源时有助于延缓电池老化"))
-                                    .dsFont(.xs)
-                                    .foregroundStyle(DS.Palette.textTertiary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                Spacer(minLength: 0)
-                                Button(tr("电池设置")) {
-                                    if let url = URL(string: "x-apple.systempreferences:com.apple.Battery-Settings.extension") {
-                                        NSWorkspace.shared.open(url)
-                                    }
-                                }
-                                .buttonStyle(DSButtonStyle(kind: .secondary))
-                                .fixedSize()
-                            }
-                        }
-                    } else {
-                        Text(tr("这台 Mac 没有电池")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
-                    }
-                }
-            }
-
-            BluetoothCard()
 
             InfoCard(icon: "display.2", title: tr("显示器")) {
                 let displays = DisplayInfo.all()
@@ -220,16 +177,5 @@ struct DisplayInfo {
         guard let best = (native.isEmpty ? modes : native)
             .max(by: { $0.pixelWidth * $0.pixelHeight < $1.pixelWidth * $1.pixelHeight }) else { return nil }
         return (best.pixelWidth, best.pixelHeight)
-    }
-}
-
-/// 已连接蓝牙设备的电量；页面打开期间由 BluetoothController 每分钟刷新
-private struct BluetoothCard: View {
-    @Environment(AppModel.self) private var model
-
-    var body: some View {
-        InfoCard(icon: "dot.radiowaves.left.and.right", title: tr("蓝牙设备")) {
-            BluetoothDeviceList(devices: model.bluetooth.devices)
-        }
     }
 }

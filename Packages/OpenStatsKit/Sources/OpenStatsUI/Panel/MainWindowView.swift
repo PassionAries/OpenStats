@@ -138,6 +138,10 @@ private struct MainSidebar: View {
                     .scrollBounceBehavior(.basedOnSize)
             }
 
+            // 固定在导航下面，切到哪一页都在，不用进防休眠、温度与风扇页
+            SidebarQuickSwitches()
+                .padding(.leading, DS.Space.s2)
+
             HStack(spacing: DS.Space.s1) {
                 ThemeToggle()
                 Spacer(minLength: 0)
@@ -195,6 +199,122 @@ private struct MainSidebar: View {
     }
 }
 
+/// 侧边栏底部的快捷开关：防休眠与风扇调速，点开关即生效。
+/// 点名称进入对应页面调细项；右键直接选防休眠时长、开关合盖运行，或选风扇档位。没有风扇的 Mac 只显示防休眠
+private struct SidebarQuickSwitches: View {
+    @Environment(AppModel.self) private var model
+
+    private static let durations: [KeepAwakeController.Duration] = [.hour1, .hours2, .hours4, .hours8, .hours12, .unlimited]
+    private static let fanModes: [FanController.Mode] = [.automatic, .cooling, .maximum]
+
+    var body: some View {
+        let keepAwake = model.keepAwake
+        let fans = model.fans
+
+        VStack(alignment: .leading, spacing: 0) {
+            Text(tr("快捷开关"))
+                .dsFont(.xs, weight: .medium)
+                .foregroundStyle(DS.Palette.textTertiary)
+                .padding(.horizontal, DS.Space.s2)
+                .padding(.bottom, DS.Space.s1)
+
+            SidebarSwitchRow(icon: keepAwake.isActive ? "cup.and.saucer.fill" : "cup.and.saucer",
+                             title: tr("防休眠"), detail: keepAwakeDetail,
+                             help: tr("点名称打开防休眠页设置屏幕是否常亮；右键直接选时长或开启合盖运行"),
+                             isOn: Binding(get: { keepAwake.isActive },
+                                           set: { value in Task { await keepAwake.setActive(value) } })) {
+                model.settings.panelTab = .keepAwake
+            } menu: {
+                ForEach(Self.durations) { duration in
+                    Toggle(duration.title, isOn: Binding(get: { keepAwake.isActive && keepAwake.duration == duration }, set: { _ in
+                        keepAwake.setDuration(duration)
+                        if !keepAwake.isActive { Task { await keepAwake.start() } }
+                    }))
+                }
+                Divider()
+                // 打开时一并开启防休眠；没装辅助工具时跳到防休眠页引导安装
+                Toggle(tr("合盖后继续运行"), isOn: Binding(get: { keepAwake.lidClosedRequested }, set: { model.requestLidMode($0) }))
+                if keepAwake.isActive {
+                    Divider()
+                    Button(tr("关闭防休眠")) { Task { await keepAwake.setActive(false) } }
+                }
+            }
+
+            if hasFans {
+                SidebarSwitchRow(icon: "fan", title: tr("风扇调速"),
+                                 detail: fans.mode == .automatic ? tr("系统自动") : tr("\(fans.mode.title)中"),
+                                 help: tr("打开时沿用上次选的档位；点名称打开温度与风扇页设置自定义转速，右键直接选档位"),
+                                 isOn: Binding(get: { fans.mode != .automatic }, set: { model.requestFanControl($0) })) {
+                    model.settings.panelTab = .thermal
+                } menu: {
+                    ForEach(Self.fanModes) { mode in
+                        Toggle(mode.title, isOn: Binding(get: { fans.mode == mode }, set: { if $0 { model.requestFanMode(mode) } }))
+                    }
+                }
+            }
+        }
+        .task { await model.fans.loadFansIfNeeded() }
+    }
+
+    private var hasFans: Bool { !(model.store.sensors?.fans.isEmpty ?? true) }
+
+    /// 开启时显示结束时间而不是倒计时：侧边栏窄，也不用每分钟刷新
+    private var keepAwakeDetail: String {
+        let keepAwake = model.keepAwake
+        guard keepAwake.isActive else { return tr("按系统休眠") }
+        guard let end = keepAwake.endDate else { return tr("不限时") }
+        return tr("\(end.formatted(date: .omitted, time: .shortened)) 结束")
+    }
+}
+
+/// 快捷开关的一行：图标与缩进和导航项对齐，名称下面一行是当前状态，右侧是开关
+private struct SidebarSwitchRow<MenuItems: View>: View {
+    let icon: String
+    let title: String
+    let detail: String
+    let help: String
+    @Binding var isOn: Bool
+    let open: () -> Void
+    @ViewBuilder var menu: MenuItems
+    @State private var hovering = false
+
+    var body: some View {
+        HStack(spacing: DS.Space.s2) {
+            Button(action: open) {
+                HStack(spacing: DS.Space.s2) {
+                    Image(systemName: icon)
+                        .dsFont(.sm, weight: .medium)
+                        .foregroundStyle(isOn ? DS.Palette.primary : hovering ? DS.Palette.textPrimary : DS.Palette.textSecondary)
+                        .frame(width: DS.Size.iconStandalone)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(title)
+                            .dsFont(.sm)
+                            .foregroundStyle(hovering ? DS.Palette.textPrimary : DS.Palette.textSecondary)
+                        Text(detail)
+                            .dsFont(.xs)
+                            .monospacedDigit()
+                            .foregroundStyle(isOn ? DS.Palette.primary : DS.Palette.textTertiary)
+                    }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    Spacer(minLength: 0)
+                }
+                .contentShape(Rectangle())
+                .animation(DS.Motion.quick, value: hovering)
+            }
+            .buttonStyle(.plain)
+            .onHover { hovering = $0 }
+            .help(help)
+
+            DSToggle(isOn: $isOn, label: title)
+        }
+        // 开关贴齐侧边栏右边缘，给名称多留一点宽度（英文的 Keep Awake）
+        .padding(.leading, DS.Space.s3)
+        .padding(.vertical, DS.Space.s1)
+        .contextMenu { menu }
+    }
+}
+
 private struct PageHeader: View {
     @Environment(AppModel.self) private var model
 
@@ -213,18 +333,6 @@ private struct PageHeader: View {
             .frame(maxHeight: .infinity)
             .background(WindowDragArea())
 
-            if model.keepAwake.isActive {
-                // 与右边的按钮同高，顶栏里的控件高度一致
-                HStack(spacing: DS.Space.s1) {
-                    Image(systemName: "cup.and.saucer.fill")
-                    Text(tr("防休眠已开启")).lineLimit(1).fixedSize()
-                }
-                .dsFont(.xs, weight: .medium)
-                .foregroundStyle(DS.Palette.primary)
-                .padding(.horizontal, DS.Space.s3)
-                .frame(height: DS.Size.controlHeight)
-                .dsGlass(in: Capsule(), fallback: DS.Palette.primary.opacity(0.12))
-            }
             if tab == .memory { PurgeMemoryButton() }
             if tab == .network {
                 Button { model.openSpeedTestWindow() } label: {

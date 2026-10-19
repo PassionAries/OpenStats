@@ -62,9 +62,22 @@ system language by default; switch it in Settings → General → Language.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.7.1** (2026-10-19) · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.7.1** (2026-10-19) · **2** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
+<summary><b>2026-10-19</b> · Unreleased · 1 added · 1 changed</summary>
+
+**Added**
+
+- 主窗口侧边栏底部增加“快捷开关”：防休眠与风扇调速各一个开关，切到任何页面都能一键开关，不用再进防休眠或温度与风扇页。风扇打开时沿用上次选的档位（默认降温）；点名称进入对应页面调细项，右键可直接选防休眠时长、开关合盖运行，或选风扇档位。顶栏的“防休眠已开启”提示随之去掉。
+
+**Changed**
+
+- 去掉各页面重复的内容：仪表盘的“快捷开关”卡片（防休眠、风扇调速已在侧边栏，合盖运行移到侧边栏防休眠的右键菜单）；本机信息的电池、蓝牙设备与存储卡（分别看电池页与磁盘页，充电上限提示移到电池健康里）；清理页的“系统维护”卡（释放内存在内存页顶栏，刷新 DNS 缓存在网络页的 DNS 区块）；电池详情的功耗区块（看温度与风扇页）。
+
+</details>
+
+<details>
 <summary><b>2026-10-19</b> · 0.7.1 · 1 changed · 1 fixed</summary>
 
 **Changed**
@@ -111,25 +124,6 @@ Latest release **0.7.1** (2026-10-19) · [full changelog](CHANGELOG.md) (kept in
 
 - 电池电量正好 20% 时，不同位置的颜色不一致。
 - 风扇转速缺少千分位；网络流量峰值的上传、下载顺序与顶部不一致。
-
-</details>
-
-<details>
-<summary><b>2026-10-10</b> · 0.6.4 · 2 fixed · 2 improved · 1 added</summary>
-
-**Fixed**
-
-- 卸载扫描不会再把磁盘路径的大小写规范化误当成符号链接：实际资源库目录为 `library` 时，0.6.3 会漏掉所有资源库残留，只显示应用本体。现在逐级检查真实链接，恢复扫描并保留路径保护；无法读取或被链接阻挡的目录会显示提示。跟进 [Issue #4](https://github.com/gentpan/OpenStats/issues/4)。
-- 卸载后部分残留移动失败时，可继续重试；同一应用有其他安装副本时，只移除所选应用，保留其他副本仍在使用的数据，回收前也会重新检查。
-
-**Improved**
-
-- 参考 [Mole](https://github.com/tw93/Mole) 的公开卸载规则，独立实现更多残留识别：登录项组件的真实标识、完整产品名称变体、可执行文件名对应的崩溃报告、WebKit 与 NSURLSession 的应用子缓存，以及当前用户的临时缓存。共享父目录保留，名称匹配项默认不勾选。
-- OpenCode 增加 `.config/opencode` 与 `.cache/opencode` 候选；这些目录可能与命令行共用，默认保留，供用户逐项选择。
-
-**Added**
-
-- 合并菜单栏可在「设置 · 菜单栏 · 显示项目」用上移、下移按钮调整图标顺序，立即更新，并保存和同步设置；关闭项目后再开启仍记住位置。回应 [Issue #7](https://github.com/gentpan/OpenStats/issues/7)。
 
 </details>
 
@@ -204,6 +198,8 @@ and results are cached on the Mac for 7 days unless the address changes or you r
 
 **Main window** — a sidebar with Dashboard, This Mac, History, CPU, GPU, Memory, Disk, Network, Temperature & fans,
 Battery, plus the Processes, Startup items, Keep awake, Clean and Uninstall tools; resizable in both directions. See [Cleanup](#cleanup).
+Quick toggles at the bottom of the sidebar turn Keep awake and fan control on or off from any page; right-click to pick a duration,
+lid-closed mode or a fan mode.
 
 **Ask Apple Intelligence about a process** — right-click a process you don't recognise and the on-device
 model explains what it is, whether its usage looks normal and whether it is safe to quit. No third-party AI and
@@ -249,7 +245,7 @@ unclean exit restores them at the next boot.
   VPNs, cookies and history are off limits. Caches of running apps are skipped, browsers must
   be quit first, and every item is checked again right before it goes. Each action is logged
   to `~/Library/Logs/OpenStats/cleanup.log`.
-- **Maintenance.** Flush the DNS cache and purge memory — through the helper if it is
+- **Maintenance.** Purge memory from the top of the Memory page and flush the DNS cache from the DNS section of the Network page — through the helper if it is
   installed, otherwise after a one-time administrator prompt.
 
 <p align="center"><img src="Assets/readme/cleaner-light.png" width="600" alt="Cleanup"></p>

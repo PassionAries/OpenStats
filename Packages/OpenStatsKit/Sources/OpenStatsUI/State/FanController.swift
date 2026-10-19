@@ -26,6 +26,8 @@ public final class FanController {
     }
 
     public private(set) var mode: Mode = .automatic
+    /// 上次手动选的档位：快捷开关打开调速时沿用它，没选过时是“降温”
+    public private(set) var lastManualMode: Mode = .cooling
     /// 自定义档位：0 为最低转速，1 为最高转速
     public var customLevel: Double = 0.5
     public private(set) var isApplying = false
@@ -57,8 +59,15 @@ public final class FanController {
             mode = previous
             show(error, isError: true)
         } else {
+            if newMode != .automatic { lastManualMode = newMode }
             clearNotice()
         }
+    }
+
+    /// 当前页面不采集风扇时 store 里可能还没有风扇读数：单独读一次，供侧边栏判断这台 Mac 有没有风扇、下发档位时使用
+    func loadFansIfNeeded() async {
+        guard store.sensors?.fans.isEmpty ?? true else { return }
+        store.updateFans(await hub.sampleFans())
     }
 
     func commitCustomLevel() async {
@@ -94,6 +103,7 @@ public final class FanController {
     }
 
     private func apply() async -> String? {
+        await loadFansIfNeeded()
         let fans = store.sensors?.fans ?? []
         guard !fans.isEmpty else { return tr("未检测到可调节的风扇") }
         isApplying = true

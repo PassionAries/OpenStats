@@ -225,7 +225,6 @@ npm 缓存	npm Cache
 使用电池	On battery
 使用电池且电量低于该值时，自动关闭合盖运行	Turn off lid-closed mode when on battery below this level
 例如 1.1.1.1, 8.8.8.8	e.g. 1.1.1.1, 8.8.8.8
-保持唤醒	Keep Awake
 保持运行	Keep alive
 信号强度	Signal
 修改 DNS 需要管理员权限：已安装辅助工具时直接修改，否则每次弹出系统授权框。	Changing DNS needs administrator permission: it's applied directly when the helper is installed, otherwise the system asks each time.
@@ -318,7 +317,6 @@ npm 缓存	npm Cache
 占用	Usage
 占用超过 85%（电池电量低于 20%）时数值与图形显示为红色	Values and graphics turn red above 85% usage (below 20% battery)
 占用高于	Usage above
-卷	Volume
 卸载	Uninstall
 卸载“{}”？	Uninstall “{}”?
 卸载失败：{}	Uninstall failed: {}
@@ -391,7 +389,6 @@ npm 缓存	npm Cache
 合并显示	Combined
 合盖后继续运行	Keep Running with Lid Closed
 合盖电量下限	Lid Mode Battery Floor
-合盖睡眠	Lid sleep
 合盖运行	Lid Closed
 合盖运行时散热变差，请勿放入包中。使用电池且电量低于 {}% 时会自动关闭。	Cooling is worse with the lid closed, so don't put your Mac in a bag. Turns off automatically on battery below {}%.
 合盖运行设置	Lid Mode
@@ -442,7 +439,6 @@ npm 缓存	npm Cache
 备用空间低于阈值，建议备份	Spare capacity below threshold; back up your data
 外置硬盘、U 盘、镜像与网络共享	External drives, USB sticks, disk images and network shares
 外观	Appearance
-存储	Storage
 它只做这几件事	It only does these things
 安全温度	Safety Temperature
 安装	Install
@@ -457,7 +453,6 @@ npm 缓存	npm Cache
 定时探测网络	Connectivity Probe
 实测	Measured
 家目录	Home folder
-容量	Capacity
 导出…	Export…
 导出失败：{}	Export failed: {}
 导出时间	Exported at
@@ -596,7 +591,6 @@ npm 缓存	npm Cache
 打开进程页	Show Processes
 打开通知设置	Open Notification Settings
 托管	Hosting
-执行中	Working
 扫描中	Scanning
 扫描中…	Scanning…
 扫描于 	Scanned 
@@ -640,7 +634,6 @@ npm 缓存	npm Cache
 改回开机后累计	Back to since-boot totals
 政府	Government
 教育网	Education
-散热模式	Cooling
 数据	Data
 整体风格	Overall style
 整体风格套用到所有项目。想让某个项目不一样，在下面“显示项目”里给它单独选一种，比如 CPU 用圆环、风扇用数字。	The overall style applies to every item. To make one item different, pick a style for it under Items below, say a ring for CPU and plain numbers for the fan.
@@ -870,7 +863,6 @@ npm 缓存	npm Cache
 由 Apple 智能在这台 Mac 上生成，不联网；内容可能不准确，结束进程前请自行确认。	Generated on this Mac by Apple Intelligence, offline. It may be inaccurate; double-check before ending a process.
 由 SMC 与系统能耗统计读取；新款芯片不提供可靠的 CPU 单独功耗	Read from the SMC and system energy stats; newer chips don't report reliable CPU-only power
 由 macOS 调节	Managed by macOS
-由辅助工具执行	Handled by the helper
 电池	Battery
 电池 {}	Battery {}
 电池供电	On battery
@@ -881,11 +873,9 @@ npm 缓存	npm Cache
 电池最大容量为 {}，续航会明显缩短。可以在“系统设置 › 电池”查看是否建议维修。	Battery maximum capacity is {}, so battery life will be noticeably shorter. Check System Settings › Battery for service recommendations.
 电池最大容量低于 80%，每 30 天最多提醒一次	Battery maximum capacity drops below 80%; at most once every 30 days
 电池电量	Battery level
-电池设置	Battery Settings
 电源	Power
 电源供电	On power adapter
 电源输入	Adapter input
-电源适配器{}	Power adapter{}
 电量	Battery
 电量下限	Battery floor
 电量与充电状态；没有电池的 Mac 显示蓝牙设备电量	Charge level and charging state; Macs without a battery show Bluetooth device batteries
@@ -941,10 +931,8 @@ npm 缓存	npm Cache
 系统版号	Build
 系统电池设置…	System Battery Settings…
 系统级资源库（第三方驱动、辅助工具或后台服务）	System Library (third-party drivers, helpers or background services)
-系统维护	Maintenance
 系统自动	Automatic
 系统自带的应用不能卸载	Built-in apps can't be uninstalled
-系统调节	System
 累计写入	Data written
 累计读取	Data read
 繁忙	Busy
@@ -963,7 +951,6 @@ npm 缓存	npm Cache
 结束进程…	End Process…
 统一内存（CPU 与 GPU 共享）	Unified memory (shared by CPU and GPU)
 统计家目录里每个文件夹占多少空间，并找出最大的文件；只读取大小，不改动任何文件。文件多时需要几十秒。	Measures how much space each folder in your home folder takes and finds the largest files. It only reads sizes and changes nothing; with many files it can take a minute.
-继续运行	Keep running
 绿色正常、橙色偏高（60% 以上）、红色很高（85% 以上）	Green is normal, orange is high (above 60%), red is very high (above 85%)
 缓存	Caches
 缓存与日志直接删除，下载内容移到废纸篓。	Caches and logs are deleted; downloads go to the Trash.
@@ -1124,7 +1111,6 @@ npm 缓存	npm Cache
 键盘、鼠标、耳机等低于 20% 时，在菜单栏的电池项目旁显示该设备的图标与电量；需要开启电池项目	When a keyboard, mouse, headphones or similar drops below 20%, show its icon and level next to the Battery item in the menu bar; requires the Battery item
 闲	Idle
 防休眠	Keep Awake
-防休眠已开启	Keep Awake is on
 阿里云	Alibaba Cloud
 阿里云（223.5.5.5）	Alibaba Cloud (223.5.5.5)
 降温	Cooling
@@ -1135,7 +1121,6 @@ npm 缓存	npm Cache
 需要 macOS 26 及以上，并在系统设置中开启 Apple 智能。	Requires macOS 26 or later with Apple Intelligence turned on in System Settings.
 需要完全磁盘访问权限	Needs Full Disk Access
 需要注意	Needs attention
-需要管理员授权	Needs admin approval
 需要管理员权限。已完成的 Time Machine 备份不受影响，只是本机上这些快照对应的时间点无法再从本地恢复。	Requires administrator privileges. Completed Time Machine backups are unaffected; you just won't be able to restore these points in time from this Mac.
 非常干净	Very clean
 风扇	Fans
@@ -1223,6 +1208,9 @@ macOS 报告的热状态：偏高及以上时，系统会降低性能来降温	T
 一直保持，直到手动关闭	Stays on until you turn it off
 电池健康 {}：图标里的电量格子代表健康度	Battery health {}: the bars in the icon show health
 风扇档位	Fan Mode
+风扇调速	Fan Control
+点名称打开防休眠页设置屏幕是否常亮；右键直接选时长或开启合盖运行	Click the name to open Keep Awake for display options; right-click to pick a duration or keep running with the lid closed
+打开时沿用上次选的档位；点名称打开温度与风扇页设置自定义转速，右键直接选档位	Turns on with the last mode you picked. Click the name to open Thermals for a custom speed; right-click to pick a mode
 已用 {}	{} used
 项目间距	Item Spacing
 合并显示时菜单栏里各项之间的距离，数值越小越紧凑	Spacing between items in the combined menu bar icon; smaller is more compact

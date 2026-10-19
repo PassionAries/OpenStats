@@ -22,12 +22,6 @@ struct BatteryPopover: View {
                 if battery != nil {
                     BatteryHistorySection()
                 }
-            case .batteryPower:
-                if battery != nil {
-                    SectionCard(title: section.title, trailing: { Text(tr("最近 60 秒")) }) {
-                        PowerRows(power: store.power, history: store.powerHistory.elements, compact: !isDetailPage)
-                    }
-                }
             case .batteryHealth:
                 if let battery {
                     BatteryHealthSection(battery: battery)
@@ -180,6 +174,13 @@ private struct BatteryHealthSection: View {
                 .dsFont(.xs)
                 .foregroundStyle(DS.Palette.textTertiary)
                 .fixedSize(horizontal: false, vertical: true)
+            // macOS 26 起系统自带充电上限；新款机型已不开放第三方写入 SMC 充电控制键，不另做一套
+            if ProcessInfo.processInfo.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 26, minorVersion: 0, patchVersion: 0)) {
+                Text(tr("充电上限可在系统设置中设为 80%–100%，长期接电源时有助于延缓电池老化"))
+                    .dsFont(.xs)
+                    .foregroundStyle(DS.Palette.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             HStack {
                 Spacer()
                 Button(tr("系统电池设置…")) {
