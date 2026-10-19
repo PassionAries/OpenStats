@@ -434,6 +434,8 @@ private struct DSButtonBody: View {
 struct IconButton: View {
     let systemName: String
     let help: String
+    /// 按钮的宽高；侧边栏底部那一行用小一号的
+    var size: CGFloat = DS.Size.controlHeight
     let action: () -> Void
     @State private var hovering = false
     @Environment(\.isInsideGlass) private var isInsideGlass
@@ -445,7 +447,7 @@ struct IconButton: View {
             Image(systemName: systemName)
                 .dsFont(.sm, weight: .medium)
                 .foregroundStyle(hovering ? DS.Palette.primary : glass ? DS.Palette.textPrimary : DS.Palette.textSecondary)
-                .frame(width: DS.Size.controlHeight, height: DS.Size.controlHeight)
+                .frame(width: size, height: size)
                 .modifier(IconButtonSurface(hovering: hovering, glass: glass))
                 .contentShape(Circle())
         }
@@ -517,7 +519,7 @@ struct SidebarButton: View {
             .foregroundStyle(isSelected ? DS.Palette.primary : hovering ? DS.Palette.textPrimary : DS.Palette.textSecondary)
             .padding(.leading, DS.Space.s3)
             .padding(.trailing, DS.Space.s2)
-            .frame(height: DS.Size.controlHeight)
+            .frame(height: DS.Size.sidebarRowHeight)
             .contentShape(Rectangle())
             .animation(DS.Motion.quick, value: isSelected)
             .animation(DS.Motion.quick, value: hovering)

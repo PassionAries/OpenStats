@@ -152,35 +152,36 @@ private struct MainSidebar: View {
     @Environment(\.isSnapshot) private var isSnapshot
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
-            // 三组导航加起来较高，窗口矮时侧边栏自己滚动，底部按钮始终可见
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            // 窗口矮时导航自己滚动，底部的快捷开关始终可见；上下边缘渐隐，滚到一半的行淡出，而不是被硬切成半行
             if isSnapshot {
                 navigation
             } else {
-                ScrollView { navigation.overlayScrollers() }
-                    .scrollBounceBehavior(.basedOnSize)
+                ScrollView {
+                    navigation
+                        .padding(.bottom, Self.edgeFade)
+                        .overlayScrollers()
+                }
+                .scrollBounceBehavior(.basedOnSize)
+                .mask(ScrollEdgeFade(height: Self.edgeFade))
             }
 
             // 固定在导航下面，切到哪一页都在，不用进防休眠、温度与风扇页
             SidebarQuickSwitches()
                 .padding(.leading, DS.Space.s2)
-
-            HStack(spacing: DS.Space.s1) {
-                ThemeToggle()
-                Spacer(minLength: 0)
-                IconButton(systemName: "power", help: tr("退出 OpenStats")) { model.quit() }
-            }
-            .padding(.leading, DS.Space.s2)
         }
         .padding(.leading, DS.Space.s1)
         .padding(.trailing, DS.Space.s3)
         // 顶部让出标题栏的高度，红绿灯按钮在这一条里
         .padding(.top, DS.Size.windowHeader)
-        .padding(.bottom, DS.Space.s3)
+        .padding(.bottom, DS.Space.s2)
     }
 
+    private static let edgeFade = DS.Space.s2
+
     private var navigation: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s1) {
+        // 行与行之间不留空，与系统侧边栏的密度一致；组与组之间靠组标题上方的留白分开
+        VStack(alignment: .leading, spacing: 0) {
             group(tr("监控"), PanelTab.monitors)
             group(tr("工具"), PanelTab.tools)
             group(tr("设置"), PanelTab.settings)
@@ -208,6 +209,7 @@ private struct MainSidebar: View {
             .foregroundStyle(DS.Palette.textTertiary)
             .padding(.horizontal, DS.Space.s2)
             .padding(.top, DS.Space.s2)
+            .padding(.bottom, DS.Space.s1)
         ForEach(tabs) { tab in
             SidebarButton(title: tab.title, symbol: tab.symbol, isSelected: model.settings.panelTab == tab, badge: badge(for: tab)) {
                 model.settings.panelTab = tab
@@ -217,23 +219,29 @@ private struct MainSidebar: View {
 }
 
 /// 侧边栏底部的快捷开关：防休眠与风扇调速，点开关即生效。
-/// 点名称进入对应页面调细项；右键直接选防休眠时长、开关合盖运行，或选风扇档位。没有风扇的 Mac 只显示防休眠
+/// 点名称进入对应页面调细项；右键直接选防休眠时长、开关合盖运行，或选风扇档位。没有风扇的 Mac 只显示防休眠。
+/// 标题行右侧是切换深浅色与退出两个小按钮，省掉侧边栏底部单独的一行，导航多出一截高度
 private struct SidebarQuickSwitches: View {
     @Environment(AppModel.self) private var model
 
     private static let durations: [KeepAwakeController.Duration] = [.hour1, .hours2, .hours4, .hours8, .hours12, .unlimited]
     private static let fanModes: [FanController.Mode] = [.automatic, .cooling, .maximum]
+    private static let headerButton = DS.Space.s6
 
     var body: some View {
         let keepAwake = model.keepAwake
         let fans = model.fans
 
-        VStack(alignment: .leading, spacing: 0) {
-            Text(tr("快捷开关"))
-                .dsFont(.xs, weight: .medium)
-                .foregroundStyle(DS.Palette.textTertiary)
-                .padding(.horizontal, DS.Space.s2)
-                .padding(.bottom, DS.Space.s1)
+        VStack(alignment: .leading, spacing: DS.Space.s1 / 2) {
+            HStack(spacing: 0) {
+                Text(tr("快捷开关"))
+                    .dsFont(.xs, weight: .medium)
+                    .foregroundStyle(DS.Palette.textTertiary)
+                Spacer(minLength: DS.Space.s1)
+                ThemeToggle(size: Self.headerButton)
+                IconButton(systemName: "power", help: tr("退出 OpenStats"), size: Self.headerButton) { model.quit() }
+            }
+            .padding(.leading, DS.Space.s2)
 
             SidebarSwitchRow(icon: keepAwake.isActive ? "cup.and.saucer.fill" : "cup.and.saucer",
                              title: tr("防休眠"), detail: keepAwakeDetail,
@@ -284,6 +292,19 @@ private struct SidebarQuickSwitches: View {
     }
 }
 
+/// 滚动区上下边缘的渐隐遮罩：中间不透明，两头各一段淡出
+private struct ScrollEdgeFade: View {
+    let height: CGFloat
+
+    var body: some View {
+        VStack(spacing: 0) {
+            LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: height)
+            Color.black
+            LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: height)
+        }
+    }
+}
+
 /// 快捷开关的一行：图标与缩进和导航项对齐，名称下面一行是当前状态，右侧是开关
 private struct SidebarSwitchRow<MenuItems: View>: View {
     let icon: String
@@ -327,7 +348,6 @@ private struct SidebarSwitchRow<MenuItems: View>: View {
         }
         // 开关贴齐侧边栏右边缘，给名称多留一点宽度（英文的 Keep Awake）
         .padding(.leading, DS.Space.s3)
-        .padding(.vertical, DS.Space.s1)
         .contextMenu { menu }
     }
 }
@@ -412,12 +432,13 @@ private struct HeaderControlGroup: ViewModifier {
 
 /// 在浅色与深色之间切换；当前跟随系统时，切到与系统相反的那一种
 private struct ThemeToggle: View {
+    var size: CGFloat = DS.Size.controlHeight
     @Environment(AppModel.self) private var model
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         let isDark = colorScheme == .dark
-        IconButton(systemName: isDark ? "sun.max" : "moon", help: isDark ? tr("切换到浅色") : tr("切换到深色")) {
+        IconButton(systemName: isDark ? "sun.max" : "moon", help: isDark ? tr("切换到浅色") : tr("切换到深色"), size: size) {
             model.settings.appearance = isDark ? .light : .dark
         }
     }
