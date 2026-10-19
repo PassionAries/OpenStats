@@ -474,7 +474,6 @@ npm 缓存	npm Cache
 左耳	Left
 已{}“{}”	{} “{}”
 已优化	Optimized
-已使用 Developer ID 签名（团队 {}），辅助工具只接受同一团队签名的 OpenStats。	Signed with Developer ID (team {}); the helper only accepts OpenStats signed by the same team.
 已停用	Off
 已充满	Charged
 已删除 {} 个快照，腾出的空间稍后会反映在“可清除”里	Deleted {} snapshots; the freed space will show up under purgeable shortly
@@ -553,7 +552,6 @@ npm 缓存	npm Cache
 归属地	Location
 归属地数据来自	Location data from
 当前 {} · 发布于 {} · {} · {}	Current {} · Released {} · {} · {}
-当前为临时签名的开发构建，辅助工具只能校验应用标识。使用 Developer ID 证书构建后会自动启用团队校验。	This is an ad-hoc signed development build, so the helper can only check the bundle ID. Team verification turns on automatically with a Developer ID build.
 当前效果（实时数据）	Preview (live data)
 当前版本	Current version
 当前版本 {}	Current version {}

@@ -723,6 +723,7 @@ struct HelperSettings: View {
                     CapabilityLine(text: tr("刷新 DNS 缓存、释放内存、为网络服务设置 DNS 服务器"))
                     CapabilityLine(text: tr("应用退出或断开连接时，自动恢复风扇与睡眠设置"))
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             GroupRow {
                 HStack(spacing: DS.Space.s2) {
@@ -761,11 +762,6 @@ struct HelperSettings: View {
         }
         if let error = helper.lastError {
             InfoBanner(icon: "exclamationmark.triangle.fill", text: error, tone: .error)
-        }
-        if let team = CodeSigningInfo.currentTeamIdentifier() {
-            InfoBanner(icon: "checkmark.seal", text: tr("已使用 Developer ID 签名（团队 \(team)），辅助工具只接受同一团队签名的 OpenStats。"), tone: .success)
-        } else {
-            InfoBanner(icon: "info.circle", text: tr("当前为临时签名的开发构建，辅助工具只能校验应用标识。使用 Developer ID 证书构建后会自动启用团队校验。"), tone: .neutral)
         }
     }
 
