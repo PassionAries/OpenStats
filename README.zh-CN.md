@@ -57,10 +57,10 @@ CPU 不分性能核与能效核，部分功耗与频率读数可能不显示。
 <!-- changelog:start -->
 <!-- 由 Scripts/sync_changelog.py 从 CHANGELOG.md 生成，请勿手改。 -->
 
-最新版本 **0.7.1**（2026-10-19） · 开发中 **2** 项改动尚未发布 · [完整更新日志](CHANGELOG.md)
+最新版本 **0.7.2**（2026-10-19） · [完整更新日志](CHANGELOG.md)
 
 <details open>
-<summary><b>2026-10-19</b> · 未发布 · 新增 1 · 调整 1</summary>
+<summary><b>2026-10-19</b> · 0.7.2 · 新增 1 · 调整 1</summary>
 
 **新增**
 

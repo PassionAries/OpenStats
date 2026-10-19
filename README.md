@@ -62,10 +62,10 @@ system language by default; switch it in Settings → General → Language.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.7.1** (2026-10-19) · **2** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.7.2** (2026-10-19) · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
-<summary><b>2026-10-19</b> · Unreleased · 1 added · 1 changed</summary>
+<summary><b>2026-10-19</b> · 0.7.2 · 1 added · 1 changed</summary>
 
 **Added**
 
