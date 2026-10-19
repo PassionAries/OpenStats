@@ -594,8 +594,8 @@ private struct DNSSection: View {
                             .dsFont(.xs)
                             .padding(.horizontal, DS.Space.s2)
                             .frame(height: DS.Size.controlHeight)
-                            .background(DS.Palette.surface, in: RoundedRectangle(cornerRadius: DS.Radius.md))
-                            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).strokeBorder(DS.Palette.neutral300, lineWidth: DS.Size.stroke))
+                            .background(DS.Palette.surface, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).strokeBorder(DS.Palette.neutral300, lineWidth: DS.Size.stroke))
                             .onSubmit { applyManual(service: physical.serviceName) }
                         Button(tr("应用")) { applyManual(service: physical.serviceName) }
                             .buttonStyle(DSButtonStyle(kind: .primary))

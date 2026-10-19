@@ -89,8 +89,8 @@ private struct AppListColumn: View {
             }
             .padding(.leading, DS.Space.s2)
             .frame(height: DS.Size.controlHeight)
-            .background(DS.Palette.elevated, in: RoundedRectangle(cornerRadius: DS.Radius.md))
-            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).strokeBorder(DS.Palette.neutral300, lineWidth: DS.Size.stroke))
+            .background(DS.Palette.elevated, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).strokeBorder(DS.Palette.neutral300, lineWidth: DS.Size.stroke))
 
             Text(uninstaller.isLoading ? tr("正在扫描应用…") : tr("\(apps.count) 个应用，系统自带的不列出"))
                 .dsFont(.xs)
@@ -140,7 +140,7 @@ private struct AppListRow: View {
             .padding(.horizontal, DS.Space.s2)
             .padding(.vertical, DS.Space.s1)
             .background(isSelected ? DS.Palette.primarySoft : hovering ? DS.Palette.surface : .clear,
-                        in: RoundedRectangle(cornerRadius: DS.Radius.md))
+                        in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -279,6 +279,6 @@ private struct DropHint: View {
         }
         .frame(maxWidth: .infinity)
         .padding(DS.Space.s12)
-        .background(isTargeted ? DS.Palette.primarySoft : DS.Palette.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .background(isTargeted ? DS.Palette.primarySoft : DS.Palette.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
     }
 }

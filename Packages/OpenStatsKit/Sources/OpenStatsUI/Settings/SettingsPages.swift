@@ -30,7 +30,7 @@ struct SettingsGroup<Content: View>: View {
             VStack(alignment: .leading, spacing: 0) {
                 content
             }
-            .background(DS.Palette.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+            .background(DS.Palette.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         }
     }
 }
@@ -461,7 +461,7 @@ private struct ItemStyleRow: View {
         return Image(nsImage: MenuBarRenderer.preview(image, dark: colorScheme == .dark))
             .padding(.horizontal, DS.Space.s3)
             .frame(height: DS.Size.segmentHeight + DS.Space.s1)
-            .background(DS.Palette.track, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+            .background(DS.Palette.track, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             .accessibilityLabel(tr("该项目在菜单栏里的实时效果"))
     }
 }
@@ -508,8 +508,8 @@ private struct SectionToggleChip: View {
             .padding(.horizontal, DS.Space.s2)
             .frame(height: DS.Size.segmentHeight)
             .background(isOn ? DS.Palette.primary.opacity(0.12) : hovering ? DS.Palette.surfaceHover : .clear,
-                        in: RoundedRectangle(cornerRadius: DS.Radius.sm))
-            .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm)
+                        in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
                 .strokeBorder(isOn ? DS.Palette.primary.opacity(0.4) : DS.Palette.border, lineWidth: DS.Size.stroke))
             .contentShape(Rectangle())
         }
@@ -553,7 +553,7 @@ private struct StyleCard: View {
                     .padding(.horizontal, DS.Space.s2)
                     .frame(maxWidth: .infinity)
                     .frame(height: DS.Size.controlHeight + DS.Space.s2)
-                    .background(DS.Palette.track, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+                    .background(DS.Palette.track, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
 
                 HStack(spacing: DS.Space.s1) {
                     Text(style.title).dsFont(.sm, weight: .semibold).foregroundStyle(DS.Palette.textPrimary)
@@ -573,8 +573,8 @@ private struct StyleCard: View {
             }
             .padding(DS.Space.s2)
             .background(hovering && !isSelected ? DS.Palette.surfaceHover : Color.clear,
-                        in: RoundedRectangle(cornerRadius: DS.Radius.md))
-            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md)
+                        in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                 .strokeBorder(isSelected ? DS.Palette.primary : DS.Palette.border,
                               lineWidth: isSelected ? DS.Size.chartLine : DS.Size.stroke))
             .contentShape(Rectangle())
@@ -607,7 +607,7 @@ private struct MenuBarPreview: View {
         }
         .frame(height: DS.Size.controlHeight + DS.Space.s2)
         .background(dark ? Color(nsColor: NSColor(hex: 0x1F2937)) : Color(nsColor: NSColor(hex: 0xE5E7EB)),
-                    in: RoundedRectangle(cornerRadius: DS.Radius.md))
+                    in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
         .accessibilityLabel(dark ? tr("深色菜单栏预览") : tr("浅色菜单栏预览"))
     }
 }

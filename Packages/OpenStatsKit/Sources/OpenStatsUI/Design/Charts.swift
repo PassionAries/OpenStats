@@ -259,7 +259,7 @@ struct CoreClusterBars: View {
                         let count = CGFloat(cluster.coreIndices.count)
                         HStack(spacing: DS.Space.s1) {
                             if byCluster {
-                                RoundedRectangle(cornerRadius: DS.Radius.sm / 2).fill(DS.Palette.cluster(cluster.id))
+                                RoundedRectangle(cornerRadius: DS.Radius.sm / 2, style: .continuous).fill(DS.Palette.cluster(cluster.id))
                                     .frame(width: DS.Size.barHeight, height: DS.Size.barHeight)
                             }
                             Text(verbatim: label(cluster))
@@ -355,7 +355,7 @@ struct HeatLegend: View {
         HStack(spacing: DS.Space.s1) {
             Text(tr("闲")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
             ForEach([0.05, 0.3, 0.55, 0.8, 0.9], id: \.self) { value in
-                RoundedRectangle(cornerRadius: DS.Radius.sm / 2)
+                RoundedRectangle(cornerRadius: DS.Radius.sm / 2, style: .continuous)
                     .fill(CoreHeatmap.color(value))
                     .frame(width: DS.Space.s2, height: DS.Space.s2)
             }
@@ -584,7 +584,7 @@ struct ScoreBand: View {
                 .foregroundStyle(DS.Palette.onPrimary)
                 .padding(.horizontal, DS.Space.s1)
                 .frame(height: DS.Size.iconInline)
-                .background(color, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+                .background(color, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             Triangle().fill(color).frame(width: DS.Space.s2, height: DS.Space.s1)
         }
         .fixedSize()

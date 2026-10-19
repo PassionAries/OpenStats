@@ -54,7 +54,7 @@ struct Card<Content: View>: View {
         .padding(isCompact ? min(padding, DS.Space.s2 + DS.Space.s1 / 2) : padding)
         // 在等高行里撑满高度，背景随之延伸
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(DS.Palette.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .background(DS.Palette.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
     }
 }
 
@@ -164,8 +164,8 @@ struct TagBadge: View {
         .foregroundStyle(foreground)
         .padding(.horizontal, compact ? DS.Space.s1 : DS.Space.s3)
         .padding(.vertical, compact ? DS.Space.s1 / 2 : DS.Space.s1)
-        .background(fill, in: RoundedRectangle(cornerRadius: compact ? DS.Radius.sm : DS.Radius.md))
-        .overlay(RoundedRectangle(cornerRadius: compact ? DS.Radius.sm : DS.Radius.md).strokeBorder(border, lineWidth: DS.Size.stroke))
+        .background(fill, in: RoundedRectangle(cornerRadius: compact ? DS.Radius.sm : DS.Radius.md, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: compact ? DS.Radius.sm : DS.Radius.md, style: .continuous).strokeBorder(border, lineWidth: DS.Size.stroke))
         .lineLimit(1)
         .fixedSize()
     }
@@ -243,7 +243,7 @@ struct CleanIPLink: View {
     }
 }
 
-/// 胶囊切换：底槽是一条灰色胶囊，选中项是一颗蓝色胶囊滑过去，文字随之变白
+/// 小号切换：底槽是一条灰色超椭圆圆角条，选中项是一块蓝色圆角块滑过去（与底槽同心），文字随之变白
 struct PillSwitch<Value: Hashable>: View {
     @Binding var selection: Value
     let options: [(value: Value, title: String)]
@@ -261,17 +261,17 @@ struct PillSwitch<Value: Hashable>: View {
                         .frame(height: DS.Size.segmentHeight - DS.Space.s1)
                         .background {
                             if selected {
-                                Capsule().fill(DS.Palette.primary)
+                                ControlShape(nestedPadding: DS.Space.s1 / 2).fill(DS.Palette.primary)
                                     .matchedGeometryEffect(id: "pill", in: namespace)
                             }
                         }
-                        .contentShape(Capsule())
+                        .contentShape(ControlShape(nestedPadding: DS.Space.s1 / 2))
                 }
                 .buttonStyle(.plain)
             }
         }
         .padding(DS.Space.s1 / 2)
-        .background(DS.Palette.track, in: Capsule())
+        .background(DS.Palette.track, in: ControlShape())
         .animation(DS.Motion.quick, value: selection)
         .fixedSize()
     }
@@ -319,12 +319,42 @@ struct StatusBadge: View {
         }
         .padding(.horizontal, DS.Space.s2)
         .padding(.vertical, DS.Space.s1 / 2)
-        .background(tone.color.opacity(0.12), in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+        .background(tone.color.opacity(0.12), in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
         .lineLimit(1)
     }
 }
 
 // MARK: - 按钮
+
+/// 按钮与切换控件的外形：超椭圆圆角（连续曲率），半径随控件高度取，不是两头全圆的胶囊。
+/// 设计规则是 CSS `corner-shape: squircle` 下“半径约为高度的 0.46 倍”；连续曲率圆角同样半径下更圆，
+/// 再乘 0.54 后视觉一致：32pt 高的按钮约 8pt。
+/// `nestedPadding` 用于嵌在另一个控件里的选中块：按外层的高度取半径再减去两者之间的内边距，保持同心
+struct ControlShape: InsettableShape {
+    var nestedPadding: CGFloat = 0
+    private var inset: CGFloat = 0
+
+    init(nestedPadding: CGFloat = 0) {
+        self.nestedPadding = nestedPadding
+    }
+
+    static func radius(height: CGFloat) -> CGFloat {
+        height * 0.46 * 0.54
+    }
+
+    func path(in rect: CGRect) -> Path {
+        let outer = rect.height + nestedPadding * 2
+        let radius = max(0, Self.radius(height: outer) - nestedPadding - inset)
+        return RoundedRectangle(cornerRadius: radius, style: .continuous)
+            .path(in: rect.insetBy(dx: inset, dy: inset))
+    }
+
+    func inset(by amount: CGFloat) -> ControlShape {
+        var shape = self
+        shape.inset += amount
+        return shape
+    }
+}
 
 struct DSButtonStyle: ButtonStyle {
     enum Kind { case primary, secondary, ghost }
@@ -350,14 +380,14 @@ private struct DSButtonBody: View {
         }
     }
 
-    /// macOS 26：胶囊形玻璃按钮。主按钮是蓝色玻璃，次要按钮是透明玻璃，文字按钮不加玻璃
+    /// macOS 26：超椭圆圆角的玻璃按钮。主按钮是蓝色玻璃，次要按钮是透明玻璃，文字按钮不加玻璃
     private var glassBody: some View {
         configuration.label
             .dsFont(.sm, weight: .medium)
             .foregroundStyle(foreground)
             .padding(.horizontal, DS.Space.s4)
             .frame(height: DS.Size.controlHeight)
-            .contentShape(Capsule())
+            .contentShape(ControlShape())
             .modifier(GlassButtonSurface(kind: kind, active: active, isInsideGlass: isInsideGlass))
             .opacity(isEnabled ? 1 : 0.5)
             .onHover { hovering = $0 }
@@ -370,10 +400,10 @@ private struct DSButtonBody: View {
             .foregroundStyle(foreground)
             .padding(.horizontal, DS.Space.s3)
             .frame(height: DS.Size.controlHeight)
-            .background(background, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+            .background(background, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
             .overlay {
                 if kind == .secondary {
-                    RoundedRectangle(cornerRadius: DS.Radius.md).strokeBorder(DS.Palette.border, lineWidth: DS.Size.stroke)
+                    RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).strokeBorder(DS.Palette.border, lineWidth: DS.Size.stroke)
                 }
             }
             .opacity(isEnabled ? 1 : 0.5)
@@ -435,11 +465,11 @@ private struct GlassButtonSurface: ViewModifier {
     func body(content: Content) -> some View {
         switch kind {
         case .primary:
-            content.dsGlass(in: Capsule(), tint: DS.Palette.primary, interactive: true)
+            content.dsGlass(in: ControlShape(), tint: DS.Palette.primary, interactive: true)
         case .secondary where !isInsideGlass:
-            content.dsGlass(in: Capsule(), interactive: true)
+            content.dsGlass(in: ControlShape(), interactive: true)
         default:
-            content.background(active ? DS.Palette.surfaceHover : .clear, in: Capsule())
+            content.background(active ? DS.Palette.surfaceHover : .clear, in: ControlShape())
         }
     }
 }
@@ -454,7 +484,7 @@ private struct IconButtonSurface: ViewModifier {
         } else if DS.Glass.isAvailable {
             content.background(hovering ? DS.Palette.surfaceHover : .clear, in: Circle())
         } else {
-            content.background(hovering ? DS.Palette.surfaceHover : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+            content.background(hovering ? DS.Palette.surfaceHover : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
         }
     }
 }
@@ -674,7 +704,7 @@ struct DSCheckbox: View {
 
     var body: some View {
         Button(action: action) {
-            RoundedRectangle(cornerRadius: DS.Radius.sm)
+            RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
                 .fill(isOn ? DS.Palette.primary : Color.clear)
                 .overlay {
                     if isOn {
@@ -682,7 +712,7 @@ struct DSCheckbox: View {
                             .font(.system(size: DS.TextSize.xs.rawValue - DS.Space.s1 / 2, weight: .bold))
                             .foregroundStyle(DS.Palette.onPrimary)
                     } else {
-                        RoundedRectangle(cornerRadius: DS.Radius.sm)
+                        RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
                             .strokeBorder(DS.Palette.neutral300, lineWidth: DS.Size.chartLine)
                     }
                 }
@@ -781,7 +811,7 @@ struct InfoBanner<Action: View>: View {
             action
         }
         .padding(DS.Space.s3)
-        .background(tone.color.opacity(0.08), in: RoundedRectangle(cornerRadius: DS.Radius.md))
+        .background(tone.color.opacity(0.08), in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
     }
 }
 
@@ -803,9 +833,9 @@ struct DSSlider: View {
             let knob = DS.Size.switchKnob
             let x = (width - knob) * min(1, max(0, value))
             ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: DS.Radius.sm).fill(DS.Palette.track)
+                RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).fill(DS.Palette.track)
                     .frame(height: DS.Space.s1 + DS.Space.s1 / 2)
-                RoundedRectangle(cornerRadius: DS.Radius.sm).fill(DS.Palette.primary)
+                RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).fill(DS.Palette.primary)
                     .frame(width: x + knob / 2, height: DS.Space.s1 + DS.Space.s1 / 2)
                 Circle()
                     .fill(DS.Palette.elevated)
@@ -898,7 +928,7 @@ struct Chip: View {
         .padding(.horizontal, DS.Space.s2)
         .padding(.vertical, DS.Space.s1 / 2)
         .background(tone == .neutral ? DS.Palette.track : tone.color.opacity(0.12),
-                    in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+                    in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
         .lineLimit(1)
         .fixedSize()
     }
@@ -913,7 +943,7 @@ struct ChipButton: View {
 
     var body: some View {
         if DS.Glass.isAvailable {
-            // macOS 26：每个选项是一颗玻璃胶囊，选中的是蓝色玻璃
+            // macOS 26：每个选项是一块超椭圆圆角的玻璃，选中的是蓝色玻璃
             Button(action: action) {
                 Text(title)
                     .dsFont(.xs, weight: isSelected ? .semibold : .medium)
@@ -921,8 +951,8 @@ struct ChipButton: View {
                     .lineLimit(1)
                     .frame(maxWidth: .infinity)
                     .frame(height: DS.Size.segmentHeight)
-                    .contentShape(Capsule())
-                    .dsGlass(in: Capsule(), tint: isSelected ? DS.Palette.primary : nil, interactive: true)
+                    .contentShape(ControlShape())
+                    .dsGlass(in: ControlShape(), tint: isSelected ? DS.Palette.primary : nil, interactive: true)
             }
             .buttonStyle(.plain)
             .animation(DS.Motion.quick, value: isSelected)
@@ -940,8 +970,8 @@ struct ChipButton: View {
                 .lineLimit(1)
                 .frame(maxWidth: .infinity)
                 .frame(height: DS.Size.segmentHeight)
-                .background(background, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
-                .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm)
+                .background(background, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
                     .strokeBorder(isSelected ? DS.Palette.primary.opacity(0.4) : DS.Palette.border, lineWidth: DS.Size.stroke))
                 .contentShape(Rectangle())
         }

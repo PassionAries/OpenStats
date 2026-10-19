@@ -121,8 +121,8 @@ struct ProcessesPage: View {
             .padding(.horizontal, DS.Space.s2)
             .frame(height: DS.Size.controlHeight)
             .frame(maxWidth: DS.Size.sidebarWidth + DS.Space.s16)
-            .background(DS.Palette.elevated, in: RoundedRectangle(cornerRadius: DS.Radius.md))
-            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).strokeBorder(DS.Palette.neutral300, lineWidth: DS.Size.stroke))
+            .background(DS.Palette.elevated, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).strokeBorder(DS.Palette.neutral300, lineWidth: DS.Size.stroke))
 
             SegmentedControl(selection: $scope, options: Scope.allCases.map { ($0, $0.title) })
                 .frame(width: DS.Size.sidebarWidth)

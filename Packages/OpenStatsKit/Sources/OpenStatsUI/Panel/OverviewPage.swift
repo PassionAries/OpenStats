@@ -512,7 +512,7 @@ struct TopProcessesCard: View {
 
 struct PlaceholderLine: View {
     var body: some View {
-        RoundedRectangle(cornerRadius: DS.Radius.sm)
+        RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
             .fill(DS.Palette.track)
             .frame(height: DS.Size.barHeight)
     }

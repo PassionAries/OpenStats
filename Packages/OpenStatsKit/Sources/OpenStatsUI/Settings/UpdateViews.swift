@@ -61,7 +61,7 @@ struct ReleaseSummary: View {
                 ScrollView { list.padding(DS.Space.s3).overlayScrollers() }
             }
             .frame(maxHeight: notesHeight)
-            .background(DS.Palette.surface, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+            .background(DS.Palette.surface, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
         } else {
             list
         }

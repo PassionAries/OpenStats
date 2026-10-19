@@ -30,7 +30,7 @@ private struct HeroCard: View {
 
         Card {
             HStack(spacing: DS.Space.s3) {
-                RoundedRectangle(cornerRadius: DS.Radius.md)
+                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                     .fill(keepAwake.isActive ? DS.Palette.primary : DS.Palette.track)
                     .frame(width: DS.Space.s12 - DS.Space.s2, height: DS.Space.s12 - DS.Space.s2)
                     .overlay {

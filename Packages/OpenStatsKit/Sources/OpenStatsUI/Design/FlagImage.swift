@@ -13,8 +13,8 @@ struct FlagImage: View {
                 .resizable()
                 .aspectRatio(4 / 3, contentMode: .fit)
                 .frame(height: height)
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm / 2))
-                .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm / 2).strokeBorder(DS.Palette.border, lineWidth: DS.Size.stroke))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm / 2, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm / 2, style: .continuous).strokeBorder(DS.Palette.border, lineWidth: DS.Size.stroke))
                 .accessibilityHidden(true)
         }
     }

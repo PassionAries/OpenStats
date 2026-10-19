@@ -36,9 +36,9 @@ struct PopoverFrame<Header: View, Content: View>: View {
         .frame(width: width)
         .frame(maxHeight: isSnapshot ? nil : .infinity, alignment: .top)
         .fixedSize(horizontal: false, vertical: isSnapshot)
-        .background(DS.Palette.background, in: RoundedRectangle(cornerRadius: DS.Radius.xl))
+        .background(DS.Palette.background, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: DS.Radius.xl).strokeBorder(DS.Palette.border, lineWidth: DS.Size.stroke)
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous).strokeBorder(DS.Palette.border, lineWidth: DS.Size.stroke)
         }
         .environment(\.isCompactText, true)
     }
@@ -297,13 +297,13 @@ private struct MiniIconSurface: ViewModifier {
         if DS.Glass.isAvailable, !isInsideGlass {
             content.dsGlass(in: Circle(), interactive: true)
         } else {
-            content.background(hovering ? DS.Palette.surfaceHover : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+            content.background(hovering ? DS.Palette.surfaceHover : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
         }
     }
 }
 
-/// 区块标题栏右侧的一组小图标按钮：macOS 26 上合成一颗玻璃胶囊（与访达工具栏的按钮分组一致），
-/// 里面的按钮不再各自带玻璃；更早的系统是一条浅灰胶囊
+/// 区块标题栏右侧的一组小图标按钮：macOS 26 上合成一块超椭圆圆角的玻璃，
+/// 里面的按钮不再各自带玻璃；更早的系统是一条浅灰底
 struct HeaderActionGroup<Content: View>: View {
     @ViewBuilder var content: Content
 
@@ -313,7 +313,7 @@ struct HeaderActionGroup<Content: View>: View {
         }
         .padding(.horizontal, DS.Space.s1 / 2)
         .environment(\.isInsideGlass, true)
-        .dsGlass(in: Capsule(), fallback: DS.Palette.track)
+        .dsGlass(in: ControlShape(), fallback: DS.Palette.track)
     }
 }
 

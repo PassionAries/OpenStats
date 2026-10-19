@@ -588,7 +588,7 @@ private struct LatencyCell: View {
         HStack(spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s1 / 2) {
                 ForEach(0..<5, id: \.self) { index in
-                    RoundedRectangle(cornerRadius: DS.Size.stroke)
+                    RoundedRectangle(cornerRadius: DS.Size.stroke, style: .continuous)
                         .fill(index < filled ? tone.color : DS.Palette.track)
                         .frame(width: DS.Space.s1, height: DS.Space.s3)
                 }

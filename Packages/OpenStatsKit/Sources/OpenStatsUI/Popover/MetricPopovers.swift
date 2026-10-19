@@ -153,7 +153,7 @@ private struct CoreRingGrid: View {
                     if clusters.count > 1 {
                         // 这类核心是干什么的，悬停组名时再说
                         HStack(spacing: DS.Space.s1) {
-                            RoundedRectangle(cornerRadius: DS.Radius.sm / 2).fill(DS.Palette.cluster(cluster.id))
+                            RoundedRectangle(cornerRadius: DS.Radius.sm / 2, style: .continuous).fill(DS.Palette.cluster(cluster.id))
                                 .frame(width: DS.Size.barHeight, height: DS.Size.barHeight)
                             Text(verbatim: tr("\(cluster.name) · \(cluster.coreIndices.count) 个"))
                                 .dsFont(.xs, weight: .medium)
