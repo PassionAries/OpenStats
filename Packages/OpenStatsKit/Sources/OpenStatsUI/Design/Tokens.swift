@@ -208,8 +208,9 @@ extension DS {
         /// 主窗口默认内容区宽度（侧边栏另计）
         static let windowDefaultContentWidth: CGFloat = 880
         static let sidebarWidth: CGFloat = 192
-        /// 侧边栏导航一行的高度：与系统侧边栏的中号行一致，比按钮矮，三组导航在常见的窗口高度里放得下
-        static let sidebarRowHeight: CGFloat = 28
+        /// 侧边栏导航一行的高度：比系统侧边栏的中号行（28pt）高约 5%，取 29.5 让 Retina 屏上落在整像素；
+        /// 比按钮矮，三组导航在常见的窗口高度里放得下
+        static let sidebarRowHeight: CGFloat = 29.5
         /// 主窗口右侧页面卡片与窗口上、右、下边缘的距离
         static let mainWindowInset: CGFloat = DS.Space.s2
         /// 主窗口最窄的宽度：侧边栏、最窄的页面卡片与右侧边距

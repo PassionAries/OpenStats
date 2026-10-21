@@ -563,7 +563,6 @@ npm 缓存	npm Cache
 循环次数	Cycle count
 微信	WeChat
 忙	Busy
-快捷开关	Quick Toggles
 快照名称格式不认识，没有删除	Unrecognized snapshot names; nothing was deleted
 性能核	Performance
 总占用	Total
@@ -1207,8 +1206,9 @@ macOS 报告的热状态：偏高及以上时，系统会降低性能来降温	T
 电池健康 {}：图标里的电量格子代表健康度	Battery health {}: the bars in the icon show health
 风扇档位	Fan Mode
 风扇调速	Fan Control
-点名称打开防休眠页设置屏幕是否常亮；右键直接选时长或开启合盖运行	Click the name to open Keep Awake for display options; right-click to pick a duration or keep running with the lid closed
-打开时沿用上次选的档位；点名称打开温度与风扇页设置自定义转速，右键直接选档位	Turns on with the last mode you picked. Click the name to open Thermals for a custom speed; right-click to pick a mode
+时长、屏幕与合盖运行	Duration, display and lid-closed mode
+按上次选的档位开启风扇调速	Turn on fan control with the last mode you picked
+交还系统自动控制	Return the fans to automatic control
 已用 {}	{} used
 项目间距	Item Spacing
 合并显示时菜单栏里各项之间的距离，数值越小越紧凑	Spacing between items in the combined menu bar icon; smaller is more compact

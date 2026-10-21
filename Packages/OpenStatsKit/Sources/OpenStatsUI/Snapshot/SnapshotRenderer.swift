@@ -86,7 +86,7 @@ enum SnapshotRenderer {
             model.combinedPopoverTab = nil
             write(CombinedPopoverView(), model: model, appearance: appearance,
                   to: outputDirectory.appendingPathComponent("popover-combined-\(suffix).png"))
-            // 总览里防休眠的浮出菜单
+            // 弹窗底部防休眠的浮出菜单
             write(KeepAwakeQuickMenu().background(DS.Palette.background), model: model, appearance: appearance,
                   to: outputDirectory.appendingPathComponent("keep-awake-menu-\(suffix).png"))
         }

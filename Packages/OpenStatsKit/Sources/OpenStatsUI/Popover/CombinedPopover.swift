@@ -18,9 +18,8 @@ struct CombinedPopoverView: View {
             VStack(spacing: DS.Space.s3) {
                 PopoverTabStrip(items: items, selection: tab) { model.combinedPopoverTab = $0 }
                 if let tab {
-                    PopoverHeader(item: tab, showsKeepAwake: false)
+                    PopoverHeader(item: tab)
                 } else {
-                    // 总览底部的常用工具里已有防休眠，标题栏不再重复放
                     OverviewHeader {
                         let page = PanelTab.overview
                         MiniIconButton(systemName: page.symbol, help: tr("在主窗口打开“\(page.title)”")) { model.openMainWindow(page) }
@@ -547,14 +546,12 @@ extension MeterCell where Accessory == EmptyView {
     }
 }
 
-/// 常用工具：摄像头与麦克风占用、防休眠与清理入口，以及累计清理记录
+/// 常用工具：摄像头与麦克风占用、清理入口，以及累计清理记录（防休眠在面板底部的快捷开关里）
 private struct ToolsCard: View {
     @Environment(AppModel.self) private var model
     @State private var media = MediaUsage()
-    @State private var showsKeepAwake = false
 
     var body: some View {
-        let keepAwake = model.keepAwake
         let tally = model.cleanupTally
 
         Card(padding: DS.Space.s3, spacing: DS.Space.s3) {
@@ -570,13 +567,6 @@ private struct ToolsCard: View {
                     .foregroundStyle(DS.Palette.textSecondary)
                     .lineLimit(1)
                 Spacer(minLength: DS.Space.s2)
-                // 点开浮出时长与屏幕选项，选一个时长即开启
-                ToolButton(icon: "cup.and.saucer", title: tr("防休眠"), isOn: keepAwake.isActive) {
-                    showsKeepAwake.toggle()
-                }
-                .popover(isPresented: $showsKeepAwake, arrowEdge: .top) {
-                    KeepAwakeQuickMenu().environment(model)
-                }
                 ToolButton(icon: "sparkles", title: tr("清理"), isOn: false) {
                     model.openMainWindow(.cleaner)
                 }
@@ -629,8 +619,8 @@ private struct ToolsCard: View {
     }
 }
 
-/// 防休眠的浮出菜单：上面两行时长格子（1h 2h 4h / 8h 12h ∞），选一个就按这个时长开启；
-/// 下面切换屏幕是否保持常亮；开启时底部显示结束时间与关闭按钮
+/// 防休眠的浮出菜单（弹窗底部快捷开关的小箭头）：上面两行时长格子（1h 2h 4h / 8h 12h ∞），选一个就按这个时长开启；
+/// 下面切换屏幕是否保持常亮、合盖后是否继续运行；开启时底部显示结束时间与关闭按钮
 struct KeepAwakeQuickMenu: View {
     @Environment(AppModel.self) private var model
 
@@ -666,6 +656,16 @@ struct KeepAwakeQuickMenu: View {
             SegmentedControl(selection: Binding(get: { keepAwake.mode }, set: { keepAwake.setMode($0) }),
                              options: KeepAwakeController.Mode.allCases.map { ($0, $0.shortTitle) })
                 .help(keepAwake.mode.subtitle)
+
+            // 打开时一并开启防休眠；没装辅助工具时跳到主窗口的防休眠页引导安装
+            HStack(spacing: DS.Space.s2) {
+                Text(tr("合盖后继续运行"))
+                    .dsFont(.sm)
+                    .foregroundStyle(DS.Palette.textPrimary)
+                Spacer(minLength: DS.Space.s2)
+                DSToggle(isOn: Binding(get: { keepAwake.lidClosedRequested }, set: { model.requestLidMode($0) }),
+                         label: tr("合盖后继续运行"))
+            }
 
             if keepAwake.isActive {
                 HStack {

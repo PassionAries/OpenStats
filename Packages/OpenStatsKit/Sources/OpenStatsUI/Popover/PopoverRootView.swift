@@ -16,7 +16,7 @@ struct PopoverRootView: View {
     }
 }
 
-/// 菜单栏弹窗的外框：顶部标题栏固定，下面的内容可滚动
+/// 菜单栏弹窗的外框：顶部标题栏与底部快捷开关固定，中间的内容可滚动
 struct PopoverFrame<Header: View, Content: View>: View {
     var width: CGFloat = DS.Size.popoverWidth
     @ViewBuilder var header: Header
@@ -32,6 +32,11 @@ struct PopoverFrame<Header: View, Content: View>: View {
             PageScroll { content }
                 .frame(maxWidth: .infinity, maxHeight: isSnapshot ? nil : .infinity, alignment: .top)
                 .environment(\.isPopover, true)
+
+            HairlineDivider()
+            PopoverQuickToggles()
+                .padding(.horizontal, DS.Space.s3)
+                .padding(.vertical, DS.Space.s2)
         }
         .frame(width: width)
         .frame(maxHeight: isSnapshot ? nil : .infinity, alignment: .top)
@@ -63,8 +68,6 @@ struct PopoverDetail: View {
 
 struct PopoverHeader: View {
     let item: MenuBarItem
-    /// 每项独立的弹窗里放防休眠开关；合并面板的总览底部已有防休眠，各标签页不再重复
-    var showsKeepAwake = true
     @Environment(AppModel.self) private var model
 
     var body: some View {
@@ -78,7 +81,6 @@ struct PopoverHeader: View {
                 .foregroundStyle(DS.Palette.textPrimary)
             Spacer(minLength: DS.Space.s2)
             if item == .memory { PurgeMemoryButton() }
-            if showsKeepAwake { KeepAwakeButton() }
             // 左边的按钮用该指标自己的图标，点进主窗口里它的页面；右边的齿轮进总设置
             let page = PanelTab(item: item)
             MiniIconButton(systemName: page.symbol, help: tr("在主窗口打开“\(page.title)”")) { model.openMainWindow(page) }
@@ -252,8 +254,6 @@ struct CopyableText: View {
 struct MiniIconButton: View {
     let systemName: String
     let help: String
-    /// 开关类按钮开启时用品牌色
-    var isOn = false
     let action: () -> Void
     @State private var hovering = false
 
@@ -261,7 +261,7 @@ struct MiniIconButton: View {
         Button(action: action) {
             Image(systemName: systemName)
                 .dsFont(.xs, weight: .semibold)
-                .foregroundStyle(isOn ? DS.Palette.primary : hovering ? DS.Palette.textPrimary : DS.Palette.textSecondary)
+                .foregroundStyle(hovering ? DS.Palette.textPrimary : DS.Palette.textSecondary)
                 .frame(width: DS.Size.segmentHeight, height: DS.Size.segmentHeight)
                 .modifier(MiniIconSurface(hovering: hovering))
                 .contentShape(Circle())
@@ -270,21 +270,146 @@ struct MiniIconButton: View {
         .onHover { hovering = $0 }
         .help(help)
         .accessibilityLabel(help)
-        .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }
 
-/// 防休眠快捷开关：每个弹窗的标题栏都有，不用进主窗口就能开关
-struct KeepAwakeButton: View {
+/// 弹窗底部的快捷开关：防休眠与风扇调速。每项独立的弹窗、合并面板的每个标签底部都有，点一下就开关。
+/// 右侧的小箭头调细项：防休眠弹出时长、屏幕与合盖运行，风扇选档位。没有风扇的 Mac 只显示防休眠
+struct PopoverQuickToggles: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.isSnapshot) private var isSnapshot
+    @State private var showsKeepAwake = false
+
+    private static let fanModes: [FanController.Mode] = [.automatic, .cooling, .maximum]
 
     var body: some View {
         let keepAwake = model.keepAwake
-        MiniIconButton(systemName: keepAwake.isActive ? "cup.and.saucer.fill" : "cup.and.saucer",
-                       help: keepAwake.isActive ? tr("关闭防休眠") : tr("开启防休眠"),
-                       isOn: keepAwake.isActive) {
-            Task { await keepAwake.setActive(!keepAwake.isActive) }
+        let fans = model.fans
+
+        HStack(spacing: DS.Space.s2) {
+            QuickToggleTile(icon: keepAwake.isActive ? "cup.and.saucer.fill" : "cup.and.saucer",
+                            title: tr("防休眠"), status: keepAwakeStatus, isOn: keepAwake.isActive,
+                            help: keepAwake.isActive ? tr("关闭防休眠") : tr("开启防休眠")) {
+                Task { await keepAwake.setActive(!keepAwake.isActive) }
+            } options: {
+                Button { showsKeepAwake.toggle() } label: { QuickToggleChevron() }
+                    .buttonStyle(.plain)
+                    .help(tr("时长、屏幕与合盖运行"))
+                    .popover(isPresented: $showsKeepAwake, arrowEdge: .top) {
+                        KeepAwakeQuickMenu().environment(model)
+                    }
+            }
+
+            if hasFans {
+                QuickToggleTile(icon: "fan", title: tr("风扇调速"),
+                                status: fans.mode == .automatic ? tr("系统自动") : tr("\(fans.mode.title)中"),
+                                isOn: fans.mode != .automatic,
+                                help: fans.mode == .automatic ? tr("按上次选的档位开启风扇调速") : tr("交还系统自动控制")) {
+                    model.requestFanControl(fans.mode == .automatic)
+                } options: {
+                    // 离屏截图拍不出菜单按钮，只画箭头
+                    if isSnapshot {
+                        QuickToggleChevron()
+                    } else {
+                        Menu {
+                            ForEach(Self.fanModes) { mode in
+                                Toggle(mode.title, isOn: Binding(get: { fans.mode == mode }, set: { if $0 { model.requestFanMode(mode) } }))
+                            }
+                        } label: {
+                            QuickToggleChevron()
+                        }
+                        .menuStyle(.button)
+                        .buttonStyle(.plain)
+                        .menuIndicator(.hidden)
+                        .fixedSize()
+                        .help(tr("风扇档位"))
+                    }
+                }
+            }
         }
+        .task { await model.fans.loadFansIfNeeded() }
+    }
+
+    private var hasFans: Bool { !(model.store.sensors?.fans.isEmpty ?? true) }
+
+    /// 开启时显示结束时间而不是倒计时：不用每分钟刷新
+    private var keepAwakeStatus: String {
+        let keepAwake = model.keepAwake
+        guard keepAwake.isActive else { return tr("按系统休眠") }
+        guard let end = keepAwake.endDate else { return tr("不限时") }
+        return tr("\(end.formatted(date: .omitted, time: .shortened)) 结束")
+    }
+}
+
+/// 快捷开关的一块：左边是圆形图标、名称与当前状态，点一下开关；右边放调细项的小箭头
+private struct QuickToggleTile<Options: View>: View {
+    let icon: String
+    let title: String
+    let status: String
+    let isOn: Bool
+    let help: String
+    let toggle: () -> Void
+    @ViewBuilder var options: Options
+    @State private var hovering = false
+
+    private static var iconSize: CGFloat { DS.Space.s6 + DS.Space.s1 }
+    private static var height: CGFloat { DS.Space.s12 - DS.Space.s1 }
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+        HStack(spacing: 0) {
+            Button(action: toggle) {
+                HStack(spacing: DS.Space.s2) {
+                    Image(systemName: icon)
+                        .dsFont(.sm, weight: .semibold)
+                        .foregroundStyle(isOn ? DS.Palette.onPrimary : DS.Palette.textSecondary)
+                        .frame(width: Self.iconSize, height: Self.iconSize)
+                        .background(isOn ? DS.Palette.primary : DS.Palette.track, in: Circle())
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(title)
+                            .dsFont(.sm, weight: .medium)
+                            .foregroundStyle(DS.Palette.textPrimary)
+                        Text(status)
+                            .dsFont(.xs)
+                            .monospacedDigit()
+                            .foregroundStyle(isOn ? DS.Palette.primary : DS.Palette.textTertiary)
+                    }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    Spacer(minLength: 0)
+                }
+                .padding(.leading, DS.Space.s2)
+                .frame(maxHeight: .infinity)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(help)
+            .accessibilityLabel(title)
+            .accessibilityValue(isOn ? tr("开") : tr("关"))
+            .accessibilityAddTraits(isOn ? .isSelected : [])
+
+            options
+                .padding(.trailing, DS.Space.s1)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: Self.height)
+        .background {
+            shape.fill(DS.Palette.surface)
+            if hovering { shape.fill(DS.Palette.surfaceHover) }
+        }
+        .onHover { hovering = $0 }
+        .animation(DS.Motion.quick, value: isOn)
+    }
+}
+
+/// 快捷开关右侧调细项的小箭头
+private struct QuickToggleChevron: View {
+    var body: some View {
+        Image(systemName: "chevron.down")
+            .dsFont(.xs, weight: .semibold)
+            .foregroundStyle(DS.Palette.textSecondary)
+            .frame(width: DS.Space.s6, height: DS.Space.s8)
+            .contentShape(Rectangle())
     }
 }
 
