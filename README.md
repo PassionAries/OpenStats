@@ -62,23 +62,24 @@ system language by default; switch it in Settings → General → Language.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.7.2** (2026-10-19) · **5** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.7.2** (2026-10-19) · **6** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
-<summary><b>2026-10-19</b> · Unreleased · 3 style · 1 fixed · 1 changed</summary>
+<summary><b>2026-10-19</b> · Unreleased · 3 style · 1 fixed · 2 changed</summary>
 
 **Style**
 
 - 主窗口改为灰色底加内容卡片：整个窗口垫一层系统侧边栏材质，侧边栏直接排在底上，右侧页面装进一张大圆角卡片，红绿灯按钮落在左上角的灰底上。
 - 卡片、标签、提示条改用连续曲率的圆角；按钮与切换控件不再是两头全圆的胶囊，圆角随控件高度变化，嵌套的选中块与外框保持同心。
-- 侧边栏导航行改为 28pt 高、行间不留空，切换深浅色与退出两个按钮移到“快捷开关”标题右侧。
+- 主窗口侧边栏导航每行 29.5pt 高、行与行之间不留空；窗口较矮时导航滚动，上下边缘渐隐。
 
 **Fixed**
 
-- 0.7.2 加了快捷开关后，侧边栏导航在常见窗口高度下被挤到只露出半截“通知”，后面几项看不到。现在约 840pt 高的窗口就能放下全部导航；窗口更矮时导航滚动，上下边缘渐隐。
+- 0.7.2 加在主窗口侧边栏底部的快捷开关把导航挤得只露出半截“通知”，后面几项看不到。快捷开关已移到菜单栏弹窗，侧边栏约 810pt 高就能放下全部导航。
 
 **Changed**
 
+- 快捷开关从主窗口侧边栏移到菜单栏弹窗底部：每项独立的弹窗、合并面板的每个标签都能一键开关防休眠与风扇调速；右侧箭头可选防休眠时长、屏幕是否常亮、合盖运行，或选风扇档位。弹窗标题栏的防休眠按钮与总览工具卡片里的防休眠入口随之去掉。
 - 设置 · 辅助工具不再显示当前构建的签名方式。
 
 </details>
@@ -180,8 +181,8 @@ and results are cached on the Mac for 7 days unless the address changes or you r
 
 **Main window** — a sidebar with Dashboard, This Mac, History, CPU, GPU, Memory, Disk, Network, Temperature & fans,
 Battery, plus the Processes, Startup items, Keep awake, Clean and Uninstall tools; resizable in both directions. See [Cleanup](#cleanup).
-Quick toggles at the bottom of the sidebar turn Keep awake and fan control on or off from any page; right-click to pick a duration,
-lid-closed mode or a fan mode.
+Quick toggles at the bottom of every menu bar popover, and of every tab in the combined panel, turn Keep awake and fan control
+on or off in one click; the arrow next to each picks a duration, lid-closed mode or a fan mode.
 
 **Ask Apple Intelligence about a process** — right-click a process you don't recognise and the on-device
 model explains what it is, whether its usage looks normal and whether it is safe to quit. No third-party AI and
