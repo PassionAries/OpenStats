@@ -62,24 +62,35 @@ system language by default; switch it in Settings → General → Language.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.7.2** (2026-10-19) · **6** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.7.3** (2026-10-21) · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
-<summary><b>2026-10-19</b> · Unreleased · 3 style · 1 fixed · 2 changed</summary>
+<summary><b>2026-10-21</b> · 0.7.3 · 1 changed · 1 style · 1 fixed</summary>
+
+**Changed**
+
+- 快捷开关从主窗口侧边栏移到菜单栏弹窗底部：每项独立的弹窗、合并面板的每个标签都能一键开关防休眠与风扇调速；右侧箭头可选防休眠时长、屏幕是否常亮、合盖运行，或选风扇档位。弹窗标题栏的防休眠按钮与总览工具卡片里的防休眠入口随之去掉。
 
 **Style**
 
-- 主窗口改为灰色底加内容卡片：整个窗口垫一层系统侧边栏材质，侧边栏直接排在底上，右侧页面装进一张大圆角卡片，红绿灯按钮落在左上角的灰底上。
-- 卡片、标签、提示条改用连续曲率的圆角；按钮与切换控件不再是两头全圆的胶囊，圆角随控件高度变化，嵌套的选中块与外框保持同心。
 - 主窗口侧边栏导航每行 29.5pt 高、行与行之间不留空；窗口较矮时导航滚动，上下边缘渐隐。
 
 **Fixed**
 
 - 0.7.2 加在主窗口侧边栏底部的快捷开关把导航挤得只露出半截“通知”，后面几项看不到。快捷开关已移到菜单栏弹窗，侧边栏约 810pt 高就能放下全部导航。
 
+</details>
+
+<details>
+<summary><b>2026-10-19</b> · 0.7.3 · 2 style · 1 changed</summary>
+
+**Style**
+
+- 主窗口改为灰色底加内容卡片：整个窗口垫一层系统侧边栏材质，侧边栏直接排在底上，右侧页面装进一张大圆角卡片，红绿灯按钮落在左上角的灰底上。
+- 卡片、标签、提示条改用连续曲率的圆角；按钮与切换控件不再是两头全圆的胶囊，圆角随控件高度变化，嵌套的选中块与外框保持同心。
+
 **Changed**
 
-- 快捷开关从主窗口侧边栏移到菜单栏弹窗底部：每项独立的弹窗、合并面板的每个标签都能一键开关防休眠与风扇调速；右侧箭头可选防休眠时长、屏幕是否常亮、合盖运行，或选风扇档位。弹窗标题栏的防休眠按钮与总览工具卡片里的防休眠入口随之去掉。
 - 设置 · 辅助工具不再显示当前构建的签名方式。
 
 </details>
@@ -94,19 +105,6 @@ Latest release **0.7.2** (2026-10-19) · **6** changes in development · [full c
 **Changed**
 
 - 去掉各页面重复的内容：仪表盘的“快捷开关”卡片（防休眠、风扇调速已在侧边栏，合盖运行移到侧边栏防休眠的右键菜单）；本机信息的电池、蓝牙设备与存储卡（分别看电池页与磁盘页，充电上限提示移到电池健康里）；清理页的“系统维护”卡（释放内存在内存页顶栏，刷新 DNS 缓存在网络页的 DNS 区块）；电池详情的功耗区块（看温度与风扇页）。
-
-</details>
-
-<details>
-<summary><b>2026-10-19</b> · 0.7.1 · 1 changed · 1 fixed</summary>
-
-**Changed**
-
-- 菜单栏标签统一为三个大写字母：DISK 改为 SSD，TEMP 改为 TMP。回应 [Issue #11](https://github.com/gentpan/OpenStats/issues/11)。
-
-**Fixed**
-
-- macOS 15 上，合并面板从总览切到任意标签时面板高度来回振荡，导致菜单卡死、内存持续上涨。回应 [Issue #10](https://github.com/gentpan/OpenStats/issues/10)。
 
 </details>
 
